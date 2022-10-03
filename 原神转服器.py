@@ -560,12 +560,24 @@ def 管理账号窗口():
 
 
 
+def 惠惠自动强化器是否下载():
+    try:
+        open("data/自动强化/惠惠自动强化器.exe")
+        是否下载=True
+    except Exception as err:
+        print(err)
+        是否下载=False
+    return 是否下载
 
 def 启动惠惠自动强化器():
-    命令一= "cd {}".format(系统路径转换(os.getcwd()+"\data\自动强化"))
-    总命令 = "{}:&".format(os.getcwd()[:1]) + 命令一 + "&.\{}".format("惠惠自动强化")
-    print(总命令)
-    threading.Thread(group=None, args=([总命令]), kwargs={}, daemon=None, target=os.system).start()  # 创建线程，防止游戏启动时转服器卡死
+    print("惠惠自动强化器是否下载="+str(惠惠自动强化器是否下载))
+    if 惠惠自动强化器是否下载:
+        命令一= "cd {}".format(系统路径转换(os.getcwd()+"\data\自动强化"))
+        总命令 = "{}:&".format(os.getcwd()[:1]) + 命令一 + "&.\{}".format("惠惠自动强化器")
+        print(总命令)
+        threading.Thread(group=None, args=([总命令]), kwargs={}, daemon=None, target=os.system).start()  # 创建线程，防止游戏启动时转服器卡死
+    else:
+        提示("惠惠自动强化器未下载，请前往qq群下载（github不能上次超过25mb的程序，强化器50mb）")
 
 
 
@@ -578,7 +590,8 @@ def 菜单():
     任务栏.add_cascade(label="检查更新", command=lambda: 检查更新(True))
     任务栏.add_cascade(label="管理账号",command=管理账号窗口)
     工具箱 = tkinter.Menu(tk,tearoff=False)
-    工具箱.add_cascade(label="惠惠自动强化器", command=启动惠惠自动强化器)
+    if 惠惠自动强化器是否下载():
+        工具箱.add_cascade(label="惠惠自动强化器", command=启动惠惠自动强化器)
     工具箱.add_cascade(label="破解帧率启动", command=破解帧率启动)
     任务栏.add_cascade(label="工具箱", menu=工具箱)
     if 获取兑换码(False) == "获取成功":
