@@ -11,8 +11,12 @@ import time
 import tkinter
 import webbrowser
 import winreg
-
-import cv2
+import pyautogui
+from pynput.keyboard import Listener
+try:
+    import cv2
+except:
+    pass
 import filedialogs
 import requests
 import win32com.client
@@ -146,7 +150,8 @@ def 官转国():
         os.rename(获取路径() + "\YuanShen_Data", 获取路径() + "\GenshinImpact_Data")  # 先改名
         os.remove(获取路径() + "\YuanShen.exe")  # 删除其他原神服主程序
     except Exception as err:
-        pass
+        print("转国际服错误:"+str(err))
+        return False
     shutil.unpack_archive("data/依赖包/官转国.zip", extract_dir=获取路径(), format=None)  # 再解压
 
 
@@ -559,25 +564,133 @@ def 管理账号窗口():
     root.mainloop()
 
 
+def 惠惠自动化工具():
+    tk = tkinter.Tk()
+    global 强化1坐标
+    global 强化2坐标
+    global 详细坐标
+    global 快捷放入坐标
+    global 强化次数
+    global 监听线程结束
+    global 回车次数
+    global 输入记录
+    global 位置记录
+    global 强化间隔时间
+    global 自动过剧情是否开启
 
-def 惠惠自动强化器是否下载():
-    try:
-        open("data/自动强化/惠惠自动强化器.exe")
-        是否下载=True
-    except Exception as err:
-        print(err)
-        是否下载=False
-    return 是否下载
+    自动过剧情是否开启 = False
+    强化间隔时间 = 0.1
+    位置记录 = []
+    输入记录 = ""
+    强化1坐标 = False
+    强化2坐标 = False
+    详细坐标 = False
+    快捷放入坐标 = False
+    强化次数 = 1
+    回车次数 = 0
+    读秒 = tkinter.StringVar()
+    读秒.set("倒计时")
 
-def 启动惠惠自动强化器():
-    print("惠惠自动强化器是否下载="+str(惠惠自动强化器是否下载))
-    if 惠惠自动强化器是否下载:
-        命令一= "cd {}".format(系统路径转换(os.getcwd()+"\data\自动强化"))
-        总命令 = "{}:&".format(os.getcwd()[:1]) + 命令一 + "&.\{}".format("惠惠自动强化器")
-        print(总命令)
-        threading.Thread(group=None, args=([总命令]), kwargs={}, daemon=None, target=os.system).start()  # 创建线程，防止游戏启动时转服器卡死
-    else:
-        提示("惠惠自动强化器未下载，请前往qq群下载（github不能上次超过25mb的程序，强化器50mb）")
+    def 修改强化次数(次数):
+        global 强化次数
+        强化次数 = 次数
+
+    def 修改强化间隔时间(间隔时间):
+        global 强化间隔时间
+        强化间隔时间 = 间隔时间
+
+    def 给惠惠打赏按钮():
+        im = Image.open('打赏.png')
+        im.show()
+
+    def 获取鼠标位置():
+        x, y = pyautogui.position()
+        return [x, y]
+
+    def 强化命令(详细x, 详细y, 强化2x, 强化2y, 快捷放入x, 快捷放入y, 强化1x, 强化1y):
+        for i in range(int(强化次数)):
+            pyautogui.click(快捷放入x, 快捷放入y)
+            pyautogui.click(强化1x, 强化1y)
+            time.sleep(强化间隔时间)
+            pyautogui.click(详细x, 详细y)
+            time.sleep(强化间隔时间)
+            pyautogui.click(强化2x, 强化2y)
+
+    def 自动过剧情():
+        global 自动过剧情是否开启
+        while True:
+            pyautogui.click(int(pyautogui.size()[0] * 0.9), (pyautogui.size()[1] * 0.6))
+            pyautogui.click(int(pyautogui.size()[0] * 0.9), (pyautogui.size()[1] * 0.65))
+            pyautogui.click(int(pyautogui.size()[0] * 0.9), (pyautogui.size()[1] * 0.7))
+            pyautogui.click(int(pyautogui.size()[0] * 0.9), (pyautogui.size()[1] * 0.75))
+            pyautogui.click(int(pyautogui.size()[0] * 0.9), (pyautogui.size()[1] * 0.8))
+            pyautogui.click(int(pyautogui.size()[0] * 0.9), (pyautogui.size()[1] * 0.85))
+            pyautogui.click(int(pyautogui.size()[0] * 0.9), (pyautogui.size()[1] * 0.))
+            if 自动过剧情是否开启 == False:
+                break
+
+    def _按键监听():
+        def 判断是否启动函数(key):
+            global 回车次数
+            global 输入记录
+            global 位置记录
+            global 自动过剧情是否开启
+            输入记录 = 输入记录 + str(key).replace("'", "")
+            if "enter" in str(key):
+                鼠标位置 = 获取鼠标位置()
+                if 回车次数 >= 4:
+                    位置记录.remove(位置记录[0])
+                位置记录.append(鼠标位置)
+                回车次数 += 1
+            if "huihui" in 输入记录:
+                输入记录 = "'"
+                print("""惠惠输入成功""")
+                try:
+                    强化命令(位置记录[0][0], 位置记录[0][1], 位置记录[1][0], 位置记录[1][1], 位置记录[2][0], 位置记录[2][1], 位置记录[3][0], 位置记录[3][1])
+                except Exception as Erroe:
+                    if Erroe == "list index out of range":
+                        pass
+            if "Key.f10" in str(key):
+                if 自动过剧情是否开启 == False:
+                    自动过剧情是否开启 = True
+                    threading.Thread(group=None, args=(), kwargs={}, daemon=None, target=自动过剧情).start()
+                else:
+                    自动过剧情是否开启 = False
+                print("自动过剧情是否开启=" + str(自动过剧情是否开启))
+
+            print(输入记录)
+            print(回车次数)
+            print(位置记录)
+
+        with Listener(判断是否启动函数) as listener:
+            listener.join()
+
+    def 按键监听():
+        监听线程 = threading.Thread(group=None, args=(), kwargs={}, daemon=None, target=_按键监听)
+        监听线程.start()
+
+    if __name__ == '__main__':
+        """-----------------------init----------------------------"""
+        按键监听()
+        """-----------------------windows config------------------"""
+        tk.geometry("420x200")
+        tk.title("惠惠自动化工具")
+        tk.resizable(False, False)
+        try:
+            tk.iconbitmap(bitmap="data/图标.ico")
+        except:
+            tk.iconbitmap(bitmap="data/资源/图标.ico")
+        tk.attributes("-topmost", 1)
+        """-------------------------label-------------------------"""
+        tkinter.Scale(tk, from_=40, to=1, resolution=1, length=150, sliderlength=20, label='次数', command=修改强化次数).place(
+            x=320, y=10)
+        tkinter.Scale(tk, from_=0.3, to=0.1, resolution=0.01, length=150, sliderlength=20, label='间隔时间',
+                      command=修改强化间隔时间).place(x=10, y=10)
+
+        """------------------------menu---------------------------"""
+        任务栏 = tkinter.Menu(tk)
+        tk.config(menu=任务栏)
+        tk.mainloop()
 
 
 
@@ -590,10 +703,14 @@ def 菜单():
     任务栏.add_cascade(label="检查更新", command=lambda: 检查更新(True))
     任务栏.add_cascade(label="管理账号",command=管理账号窗口)
     工具箱 = tkinter.Menu(tk,tearoff=False)
-    if 惠惠自动强化器是否下载():
-        工具箱.add_cascade(label="惠惠自动强化器", command=启动惠惠自动强化器)
+    工具箱.add_cascade(label="惠惠自动强化器", command=惠惠自动化工具)
     工具箱.add_cascade(label="破解帧率启动", command=破解帧率启动)
     任务栏.add_cascade(label="工具箱", menu=工具箱)
+    帮助 = tkinter.Menu(tk,tearoff=False)
+    帮助.add_cascade(label="惠惠原神转服器", command=lambda :提示(帮助,open("data/说明文档/原神转服器.md",encoding="utf-8").read()))
+    帮助.add_cascade(label="惠惠自动化工具", command=lambda :提示(帮助,open("data/说明文档/惠惠自动化工具.md",encoding="utf-8").read()))
+    帮助.add_cascade(label="破解帧率启动器", command=lambda :提示(帮助,open("data/说明文档/帧率破解器.md",encoding="utf-8").read()))
+    任务栏.add_cascade(label="帮助", menu=帮助)
     if 获取兑换码(False) == "获取成功":
         任务栏.add_cascade(label="获取兑换码", command=lambda: 获取兑换码(True))
     tk.config(menu=任务栏)
@@ -664,8 +781,6 @@ except:
 """---------------------------------  菜单   ---------------------------------------------"""
 菜单()   #将任务栏菜单放在一个函数
 """---------------------------------  背景  --------------------------------------------------"""
-if 获取背景配置() == "2":
-    播放视频(背景)
 """---------------------------------  窗口启动  ---------------------------------------------"""
 tk.mainloop()
 try:

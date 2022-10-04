@@ -1,1 +1,1 @@
-pyinstaller -F -w 原神转服器.py -i data/图标.ico --uac-admin -p venv\Lib\site-packages\cv2 -p venv\Lib\site-packages\filedialogs
+pyinstaller -F -w 原神转服器.py -i data/资源/图标.ico --uac-admin -p venv\Lib\site-packages\cv2 -p venv\Lib\site-packages\filedialogs
