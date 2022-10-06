@@ -6,14 +6,17 @@ print("""
 """)
 import os
 import shutil
+import subprocess
 import threading
 import time
 import tkinter
 import webbrowser
 import winreg
+from tkinter.ttk import Separator
+
 import pyautogui
 from pynput.keyboard import Listener
-from tkinter.ttk import Separator
+
 try:
     import cv2
 except:
@@ -24,20 +27,26 @@ import win32com.client
 from PIL import Image
 from PIL import ImageTk
 
-
-
 字体大小 = 10
 
 
+def 获取背景图片():
+    try:
+        背景图片 = tkinter.PhotoImage(file="data/资源/自定义背景图片.png")
+    except:
+        背景图片 = tkinter.PhotoImage(file="data/资源/背景.png")
+    return 背景图片
+
+
 def 记录登录次数():
-    requests.get("http://8.142.28.115:11451/记录")    #向服务器记录一次登录次数，服务器每天都会记录启动次数
+    requests.get("http://8.142.28.115:11451/记录")  # 向服务器记录一次登录次数，服务器每天都会记录启动次数
 
 
 def 获取背景配置():
-    return open("data/配置信息/背景配置", 'r').read()    #背景配置保存在data文件里里，里面只有两种状态，当背景配置为1时，显示图片背景。当背景配置为2时，显示视频背景
+    return open("data/配置信息/背景配置", 'r').read()  # 背景配置保存在data文件里里，里面只有两种状态，当背景配置为1时，显示图片背景。当背景配置为2时，显示视频背景
 
 
-def 播放视频(Label):    #这个函数我也不是很懂，是从网上抄来的
+def 播放视频(Label):  # 这个函数我也不是很懂，是从网上抄来的
     try:
         video_path = "data/资源/背景.mp4"
         if video_path[-3:] == "mp4":
@@ -48,9 +57,9 @@ def 播放视频(Label):    #这个函数我也不是很懂，是从网上抄来
                 if ret == True:
                     img = cv2.cvtColor(frame, cv2.COLOR_BGR2RGBA)  # 转换颜色使播放时保持原有色彩
                     current_image = Image.fromarray(img).resize((1000, 618))  # 将图像转换成Image对象
-                    imgtk = ImageTk.PhotoImage(image=current_image)   #将图片转换成ImageTk可以识别的对象
+                    imgtk = ImageTk.PhotoImage(image=current_image)  # 将图片转换成ImageTk可以识别的对象
                     Label.imgtk = imgtk
-                    Label.config(image=imgtk)   #配置图片
+                    Label.config(image=imgtk)  # 配置图片
                     Label.update()  # 每执行以此只显示一张图片，需要更新窗口实现视频播放
     except:
         pass
@@ -118,7 +127,7 @@ def 获取兑换码(是否保存到桌面=True):
 
 
 def 获取路径():
-    config="data/配置信息/原神路径"
+    config = "data/配置信息/原神路径"
     try:
         data = open(config, encoding="utf-8").read()
     except:
@@ -151,7 +160,7 @@ def 官转国():
         os.rename(获取路径() + "\YuanShen_Data", 获取路径() + "\GenshinImpact_Data")  # 先改名
         os.remove(获取路径() + "\YuanShen.exe")  # 删除其他原神服主程序
     except Exception as err:
-        print("转国际服错误:"+str(err))
+        print("转国际服错误:" + str(err))
         return False
     shutil.unpack_archive("data/依赖包/官转国.zip", extract_dir=获取路径(), format=None)  # 再解压
 
@@ -182,10 +191,11 @@ def b转官():
 
 
 def 启动(服="官服"):
-    if 是否需要破解帧率启动.get()=="1":
+    if 是否需要破解帧率启动.get() == "1":
         破解帧率启动()
     else:
         普通启动()
+
 
 def 普通启动():
     if 获取当前服() == "官服":
@@ -196,26 +206,35 @@ def 普通启动():
         文件名 = "GenshinImpact"
     path = 获取路径()
     命令一 = "cd {}".format(系统路径转换(path))
-    总命令="{}:&".format(path[:1]) + 命令一 + "&.\{}".format(文件名)
+    总命令 = "{}:&".format(path[:1]) + 命令一 + "&.\{}".format(文件名)
     print(总命令)
-    threading.Thread(group=None, args=([总命令]), kwargs={}, daemon=None, target=os.system).start()  # 创建线程，防止游戏启动时转服器卡死
+    # subprocess.call(总命令, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    threading.Thread(group=None, args=([总命令]),
+                     kwargs={"shell": True, "stdin": subprocess.PIPE, "stdout": subprocess.PIPE,
+                             "stderr": subprocess.PIPE}, daemon=None,
+                     target=subprocess.call).start()  # 创建线程，防止游戏启动时转服器卡死
+
 
 def 破解帧率启动():
     if 获取当前服() == "官服":
-        原神文件名="YuanShen.exe"
+        原神文件名 = "YuanShen.exe"
     if 获取当前服() == "b服":
-        原神文件名="YuanShen.exe"
+        原神文件名 = "YuanShen.exe"
     if 获取当前服() == "国际服":
-        原神文件名="GenshinImpact.exe"
-    fps_config=open("data/帧率破解器/fps_config.ini","w",encoding="GBK")
+        原神文件名 = "GenshinImpact.exe"
+    fps_config = open("data/帧率破解器/fps_config.ini", "w", encoding="GBK")
     fps_config.write(r"""[Setting]
 Path={}\{}
-FPS=200""".format(获取路径(),原神文件名))
+FPS=200""".format(获取路径(), 原神文件名))
     fps_config.close()
-    命令一= "cd {}".format(系统路径转换(os.getcwd()+"\data\帧率破解器"))
+    命令一 = "cd {}".format(系统路径转换(os.getcwd() + "\data\帧率破解器"))
     总命令 = "{}:&".format(os.getcwd()[:1]) + 命令一 + "&.\{}".format("帧率破解器")
     print(总命令)
-    threading.Thread(group=None, args=([总命令]), kwargs={}, daemon=None, target=os.system).start()  # 创建线程，防止游戏启动时转服器卡死
+    # threading.Thread(group=None, args=([总命令]), kwargs={}, daemon=None, target=os.system).start()  # 创建线程，防止游戏启动时转服器卡死
+    threading.Thread(group=None, args=([总命令]),
+                     kwargs={"shell": True, "stdin": subprocess.PIPE, "stdout": subprocess.PIPE,
+                             "stderr": subprocess.PIPE}, daemon=None,
+                     target=subprocess.call).start()  # 创建线程，防止游戏启动时转服器卡死
 
 
 def 获取当前服(是否返回未选择=True):
@@ -239,7 +258,7 @@ def 获取当前服(是否返回未选择=True):
 
 
 def 检查原神data名是国服还是国际服():
-    file_list = os.listdir(获取路径())   #获取原神路径中的所以文件名
+    file_list = os.listdir(获取路径())  # 获取原神路径中的所以文件名
     if "YuanShen_Data" in file_list:
         return "国服"
     if "GenshinImpact_Data" in file_list:
@@ -290,7 +309,7 @@ def 判断依赖包是否下载():
 
 
 def 国际服启动():
-    依赖包是否下载=判断依赖包是否下载()
+    依赖包是否下载 = 判断依赖包是否下载()
     当前服 = str(获取当前服())
     print(当前服 + " ----- 国际服")
     print("依赖包是否下载=" + str(依赖包是否下载))
@@ -306,7 +325,7 @@ def 国际服启动():
         当前服显示信息.set(获取当前服())
         启动("国际服")
     else:
-        提示("系统提示","依赖包没有下载，请前往q群下载")
+        提示("系统提示", "依赖包没有下载，请前往q群下载")
 
 
 def b服启动():
@@ -326,7 +345,7 @@ def b服启动():
 
 
 def 从桌面快捷方式选择原神路径():
-    def 获取快捷方式指向的路径(路径):  #调用api
+    def 获取快捷方式指向的路径(路径):  # 调用api
         shell = win32com.client.Dispatch("WScript.Shell")
         shortcut = shell.CreateShortCut(路径)
         return shortcut.Targetpath
@@ -372,7 +391,6 @@ def 搜索(path, name):
     return -1
 
 
-
 def 将依赖包放进data文件夹():
     def 查找qq群下载的依赖包():
         """获取腾讯文件下所以文件名，找到依赖包就返回依赖包的路径（以列表的方式）"""
@@ -382,6 +400,7 @@ def 将依赖包放进data文件夹():
             if "\官转国.zip" in i or "\国转官.zip" in i:
                 依赖包路径.append(i)
         return 依赖包路径
+
     try:
         依赖包 = 查找qq群下载的依赖包()
         依赖包[1]
@@ -395,41 +414,45 @@ def 将依赖包放进data文件夹():
         提示("系统提示", "获取失败，请前往qq群文件下载依赖包")
 
 
-
-def 添加账号(文件名,备注,账号信息库位置="data/账号库/账号信息.csv"):
-    os.system(r'reg export "HKEY_CURRENT_USER\Software\miHoYo\原神" data\账号库\{}.reg'.format(文件名))   #通过cmd命令行导出原神的注册表文件
-    文件默认编码格式=open(账号信息库位置).encoding
+def 添加账号(文件名, 备注, 账号信息库位置="data/账号库/账号信息.csv"):
+    subprocess.call(
+        r'reg export "HKEY_CURRENT_USER\Software\miHoYo\原神" data\账号库\{}.reg'.format(文件名))  # 通过cmd命令行导出原神的注册表文件
+    文件默认编码格式 = open(账号信息库位置).encoding
     try:
-        账号数据库=open(账号信息库位置,"a+",encoding="UTF-8")
+        账号数据库 = open(账号信息库位置, "a+", encoding="UTF-8")
     except:
         账号数据库 = open(账号信息库位置, "a+", encoding="GBK")
-    账号数据库.write("\n{},{},{}".format(文件名,获取当前服(True),备注))
+    账号数据库.write("\n{},{},{}".format(文件名, 获取当前服(True), 备注))
 
-def 获取所有保存的账号(账号信息库位置="data/账号库/账号信息.csv"):   #此函数会返回一个列表，里面包含所有账号信息
+
+def 获取所有保存的账号(账号信息库位置="data/账号库/账号信息.csv"):  # 此函数会返回一个列表，里面包含所有账号信息
 
     try:
         账号数据库 = open(账号信息库位置, "r", encoding="UTF-8").read()
     except:
         账号数据库 = open(账号信息库位置, "r", encoding="GBK").read()
-    所有账号列表=[]
-    for 每行信息 in 账号数据库.split("\n"):   #此循环用于创建列表
+    所有账号列表 = []
+    for 每行信息 in 账号数据库.split("\n"):  # 此循环用于创建列表
         所有账号列表.append(每行信息)
-    return 所有账号列表[1:]    #删除行头
+    return 所有账号列表[1:]  # 删除行头
+
 
 def 修改注册表信息(账号名):
-    os.system(r'reg import "data/账号库/{}.reg"'.format(账号名))
+    subprocess.call(r'reg import "data/账号库/{}.reg"'.format(账号名))
 
-def 切换账号命令(下标):   #传入下标，对应着账号信息库的顺序
-    账号信息=获取所有保存的账号()
-    print("账号信息:"+str(账号信息))
+
+def 切换账号命令(下标):  # 传入下标，对应着账号信息库的顺序
+    账号信息 = 获取所有保存的账号()
+    print("账号信息:" + str(账号信息))
     当前要启动的账号.set(账号信息[下标].split(",")[0])
     修改注册表信息(账号信息[下标].split(",")[0])
-    if 账号信息[下标].split(",")[1]=="官服":
+    if 账号信息[下标].split(",")[1] == "官服":
         官服启动()
-    if 账号信息[下标].split(",")[1]=="b服":
+    if 账号信息[下标].split(",")[1] == "b服":
         b服启动()
-    if 账号信息[下标].split(",")[1]=="国际服":
+    if 账号信息[下标].split(",")[1] == "国际服":
         国际服启动()
+
 
 def 给惠惠打赏按钮():
     im = Image.open('data/资源/打赏.png')
@@ -445,7 +468,8 @@ def 更改图片尺寸(path1, path2, x, y):
 
 def 更换背景():
     from tkinter import filedialog
-    file_path = filedialog.askopenfilenames(title='请选择一个文件', filetypes=[('图片','.png'),('图片','.jpg'), ("视频", ".mp4")])[0]
+    file_path = \
+    filedialog.askopenfilenames(title='请选择一个文件', filetypes=[('图片', '.png'), ('图片', '.jpg'), ("视频", ".mp4")])[0]
     a = open("data/配置信息/背景配置", "w")
     print(file_path)
     if "jpg" in file_path:
@@ -473,6 +497,10 @@ def 帮助命令():
     提示("可爱の惠惠の帮助", """如果程序转服识别，请联系惠惠远程""")
 
 
+def 关注惠惠bilibili():
+    webbrowser.open("https://space.bilibili.com/400684381?spm_id_from=333.1007.0.0")
+
+
 def 检查更新(是否提示已是最新版本=False):
     更新提示 = requests.get("http://8.142.28.115/新版本更新内容").text
     最新版本 = requests.get("http://8.142.28.115/4版本").text
@@ -498,52 +526,57 @@ def 检查更新(是否提示已是最新版本=False):
 def 联系惠惠():
     提示("惠惠QQ", "惠惠QQ1621320515")
 
+
 def 贡献榜():
-    提示("贡献榜  感谢大家对惠惠的支持，希望惠惠可以帮到越来越多的人",requests.get("http://8.142.28.115/贡献榜").text)
+    提示("贡献榜  感谢大家对惠惠的支持，希望惠惠可以帮到越来越多的人", requests.get("http://8.142.28.115/贡献榜").text)
+
 
 def 管理账号窗口():
     root = tkinter.Tk()
+
     # 按扭调用的函数
     def 添加账号按钮命令():
         账号名 = 账号名输入框.get()
         备注 = 备注输入框.get()
-        账号重复=False
-        if 账号名!="":
-            if 备注!="":
+        账号重复 = False
+        if 账号名 != "":
+            if 备注 != "":
                 for i in 获取所有保存的账号():
-                    if 账号名==i.split(',')[0]:
-                        账号重复=True
-                        提示信息["text"]="账号重复"
-                if 账号重复==False:
-                    添加账号(账号名,备注)
-                    提示信息["text"]=账号名+"添加成功"
+                    if 账号名 == i.split(',')[0]:
+                        账号重复 = True
+                        提示信息["text"] = "账号重复"
+                if 账号重复 == False:
+                    添加账号(账号名, 备注)
+                    提示信息["text"] = 账号名 + "添加成功"
             else:
                 提示信息["text"] = "备注不能为空"
         else:
             提示信息["text"] = "账号不能为空"
+        切换账号按钮.config(menu=菜单())
 
     def 删除按钮命令():
         账号名 = 账号名输入框.get()
         try:
-            os.remove(r"data/账号库/{}.reg".format(账号名))  #删除保存的账号注册表（reg文件）
+            os.remove(r"data/账号库/{}.reg".format(账号名))  # 删除保存的账号注册表（reg文件）
         except:
-            提示信息["text"]="账号不存在"
-        if 账号名=="":
-            提示信息["text"] = "请输入账号"  #防止整个文件给你薅了
-            return False   #不往下执行，用返回函数来卡住函数
+            提示信息["text"] = "账号不存在"
+        if 账号名 == "":
+            提示信息["text"] = "请输入账号"  # 防止整个文件给你薅了
+            return False  # 不往下执行，用返回函数来卡住函数
         """
         读取整个文件的每一行，将含有用户输入的那行删了
         """
-        账号库=open(r"data/账号库/账号信息.csv",encoding="utf-8")
-        账号库data=账号库.read()
+        账号库 = open(r"data/账号库/账号信息.csv", encoding="utf-8")
+        账号库data = 账号库.read()
         for 每行信息 in 账号库data.split("\n"):
             print(每行信息)
-            if "{},".format(账号名) in 每行信息:   #加个逗号，防止关键字错误
-                账号库data=账号库data.replace("\n"+每行信息,"")
+            if "{},".format(账号名) in 每行信息:  # 加个逗号，防止关键字错误
+                账号库data = 账号库data.replace("\n" + 每行信息, "")
                 账号库 = open(r"data/账号库/账号信息.csv", "w", encoding="utf-8")
                 账号库.write(账号库data)
                 提示信息["text"] = "删除成功"
         账号库.close()
+        切换账号按钮.config(menu=菜单())
 
     账号名显示 = tkinter.Label(root, text='账号名：')
     账号名显示.grid(row=0, sticky=tkinter.W)
@@ -685,13 +718,13 @@ def 惠惠自动化工具():
             tk.iconbitmap(bitmap="data/资源/图标.ico")
         tk.attributes("-topmost", 1)
         """-------------------------label-------------------------"""
-        tkinter.Label(tk,text="自动化工具配置，使用方法见主页帮助").place(x=0,y=0)
+        tkinter.Label(tk, text="自动化工具配置，使用方法见主页帮助").place(x=0, y=0)
         tkinter.Scale(tk, from_=40, to=1, resolution=1, length=150, sliderlength=20, label='次数', command=修改强化次数).place(
             x=320, y=40)
         tkinter.Scale(tk, from_=0.3, to=0.1, resolution=0.01, length=150, sliderlength=20, label='间隔时间',
                       command=修改强化间隔时间).place(x=10, y=40)
-        tkinter.ttk.Separator(tk,orient=tkinter.HORIZONTAL).place(x=20,y=200,width=380)
-        tkinter.Label(tk,text="自动过剧情开关：F10").place(x=0,y=250)
+        tkinter.ttk.Separator(tk, orient=tkinter.HORIZONTAL).place(x=20, y=200, width=380)
+        tkinter.Label(tk, text="自动过剧情开关：F10").place(x=0, y=250)
 
         """------------------------menu---------------------------"""
         任务栏 = tkinter.Menu(tk)
@@ -699,56 +732,73 @@ def 惠惠自动化工具():
         tk.mainloop()
 
 
-
 def 菜单():
     def 任务栏_main():
-        任务栏 = tkinter.Menu(tk,tearoff=False)
+        任务栏 = tkinter.Menu(tk, tearoff=False)
+
         def 任务栏_工具箱():
-            工具箱 = tkinter.Menu(tk,tearoff=False)
+            工具箱 = tkinter.Menu(tk, tearoff=False)
             工具箱.add_cascade(label="惠惠自动化工具", command=惠惠自动化工具)
             工具箱.add_cascade(label="破解帧率启动", command=破解帧率启动)
             任务栏.add_cascade(label="工具箱", menu=工具箱)
+
         def 任务栏_帮助():
-            帮助 = tkinter.Menu(tk,tearoff=False)
-            帮助.add_cascade(label="惠惠原神转服器", command=lambda :提示(帮助,open("data/说明文档/原神转服器.md",encoding="utf-8").read()))
-            帮助.add_cascade(label="惠惠自动化工具", command=lambda :提示(帮助,open("data/说明文档/惠惠自动化工具.md",encoding="utf-8").read()))
-            帮助.add_cascade(label="破解帧率启动器", command=lambda :提示(帮助,open("data/说明文档/帧率破解器.md",encoding="utf-8").read()))
+            帮助 = tkinter.Menu(tk, tearoff=False)
+            帮助.add_cascade(label="惠惠原神转服器", command=lambda: 提示(帮助, open("data/说明文档/原神转服器.md", encoding="utf-8").read()))
+            帮助.add_cascade(label="惠惠自动化工具",
+                           command=lambda: 提示(帮助, open("data/说明文档/惠惠自动化工具.md", encoding="utf-8").read()))
+            帮助.add_cascade(label="破解帧率启动器", command=lambda: 提示(帮助, open("data/说明文档/帧率破解器.md", encoding="utf-8").read()))
+            帮助.add_separator()  # 添加一条线，好看
+            帮助.add_cascade(label="联系惠惠", command=联系惠惠)
             任务栏.add_cascade(label="帮助", menu=帮助)
+
         def 任务栏_获取兑换码():
             if 获取兑换码(False) == "获取成功":
-                    任务栏.add_cascade(label="获取兑换码", command=lambda: 获取兑换码(True))
-        任务栏.add_cascade(label="给惠惠打赏", command=给惠惠打赏按钮)
-        任务栏.add_cascade(label="从群文件获取依赖", command=将依赖包放进data文件夹)
-        任务栏.add_cascade(label="更换背景", command=更换背景)
-        任务栏.add_cascade(label="联系惠惠", command=联系惠惠)
-        任务栏.add_cascade(label="检查更新", command=lambda: 检查更新(True))
-        任务栏.add_cascade(label="管理账号",command=管理账号窗口)
+                任务栏.add_cascade(label="获取兑换码", command=lambda: 获取兑换码(True))
+
+        def 任务栏_功能():
+            功能 = tkinter.Menu(tk, tearoff=False)
+            功能.add_cascade(label="检查更新", command=lambda: 检查更新(True))
+            功能.add_cascade(label="更换背景", command=更换背景)
+            功能.add_cascade(label="从群文件获取依赖", command=将依赖包放进data文件夹)
+            任务栏.add_cascade(label="功能", menu=功能)
+
+        def 任务栏_支持惠惠():
+            支持惠惠 = tkinter.Menu(tk, tearoff=False)
+            支持惠惠.add_cascade(label="给惠惠打赏", command=给惠惠打赏按钮)
+            支持惠惠.add_cascade(label="关注惠惠biliblil", command=关注惠惠bilibili)
+            任务栏.add_cascade(label="支持惠惠", menu=支持惠惠)
+
+        任务栏_支持惠惠()
+        任务栏.add_cascade(label="贡献榜", command=贡献榜)
+        任务栏_功能()
         任务栏_工具箱()
         任务栏_帮助()
-        任务栏.add_cascade(label="贡献榜",command=贡献榜)
         任务栏_获取兑换码()
         return 任务栏
 
     def 启动菜单_main():
-        启动菜单 = tkinter.Menu(启动按钮,tearoff=False)
+        启动菜单 = tkinter.Menu(启动按钮, tearoff=False)
         启动菜单.add_cascade(label="官服启动", command=官服启动)
         启动菜单.add_cascade(label="b服启动", command=b服启动)
         启动菜单.add_cascade(label="国际服启动", command=国际服启动)
-        启动菜单.add_separator()     #添加一条线，好看
-        启动菜单.add_checkbutton(label="是否破解帧率启动",variable=是否需要破解帧率启动)
+        启动菜单.add_separator()  # 添加一条线，好看
+        启动菜单.add_checkbutton(label="是否破解帧率启动", variable=是否需要破解帧率启动)
         return 启动菜单
 
     def 选择路径菜单_main():
-        选择路径菜单 = tkinter.Menu(选择路径按钮,tearoff=False)
+        选择路径菜单 = tkinter.Menu(选择路径按钮, tearoff=False)
         选择路径菜单.add_cascade(label="从桌面快捷方式选择原神路径", command=从桌面快捷方式选择原神路径)
         选择路径菜单.add_cascade(label="手动选择路径", command=手动选择原神路径)
         return 选择路径菜单
 
     def 切换账号菜单_main():
-        切换账号菜单 = tkinter.Menu(切换账号按钮,tearoff=False)
+        切换账号菜单 = tkinter.Menu(切换账号按钮, tearoff=False)
+        切换账号菜单.add_cascade(label="管理账号", command=管理账号窗口)
+        切换账号菜单.add_separator()  # 添加一条线，好看
         try:
             最终命令 = """"""
-            命令 = "切换账号菜单.add_cascade(label=获取所有保存的账号()[菜单下标],command=lambda :切换账号命令(菜单下标))"   #之所以要这样写是因为，假如直接使用，那么所以选项都是一样的
+            命令 = "切换账号菜单.add_cascade(label=获取所有保存的账号()[菜单下标],command=lambda :切换账号命令(菜单下标))"  # 之所以要这样写是因为，假如直接使用，那么所以选项都是一样的
             for i in range(1000):
                 最终命令 = 最终命令 + 命令.replace("菜单下标", str(i)) + "\n"
             exec(最终命令)
@@ -756,56 +806,50 @@ def 菜单():
             pass
         return 切换账号菜单
 
-
     tk.config(menu=任务栏_main())
     选择路径按钮.config(menu=选择路径菜单_main())
     切换账号按钮.config(menu=切换账号菜单_main())
     启动按钮.config(menu=启动菜单_main())
 
-
-
-"""---------------------------------  初始化  ------------------------------------------"""
-threading.Thread(group=None, args=(), kwargs={}, daemon=None, target=检查更新).start()
-threading.Thread(group=None, args=(), kwargs={}, daemon=None, target=记录登录次数).start()  # 记录登录次数的线程
-tk = tkinter.Tk()
-当前服显示信息 = tkinter.Variable()
-当前服显示信息.set(获取当前服(True))
-是否需要破解帧率启动=tkinter.StringVar()
-是否需要破解帧率启动.set("1")    #0是未选中，1是选中
-当前路径 = tkinter.Variable()
-当前路径.set(获取路径())
-当前要启动的账号=tkinter.Variable()
-当前要启动的账号.set("当前账号:默认")
-"""---------------------------------  窗口配置  ----------------------------------------"""
-tk.title("原神转服器  持续更新  作者--惠惠  bilibili:是惠惠不是惠惠 QQ群号:788395240")
-tk.geometry("1000x618")
-# tk.resizable(False, False)
-tk.iconbitmap("data/资源/图标.ico")
-路径 = 获取路径()
-"""---------------------------------  背景设置  ---------------------------------------------"""
-try:
-    背景图片 = tkinter.PhotoImage(file="data/资源/自定义背景图片.png")
-except:
-    背景图片 = tkinter.PhotoImage(file="data/资源/背景.png")
-背景 = tkinter.Label(tk, image=背景图片)
-背景.pack()
-"""---------------------------------  控件设置  ---------------------------------------------"""
-当前账号框=tkinter.Label(tk, font=字体大小, background="#FFFF6F", textvariable=当前要启动的账号, anchor="w")
-当前路径显示 = tkinter.Label(tk, font=字体大小, background="#FFFF6F", textvariable=当前路径, anchor="w")
-当前服显示框 = tkinter.Label(tk, font=字体大小, background="#FFFF6F", textvariable=当前服显示信息, anchor="w")
-启动按钮 = tkinter.Menubutton(tk, text='启动', font=字体大小)
-切换账号按钮 = tkinter.Menubutton(tk, text='选择要切换的账号', font=字体大小)
-选择路径按钮 = tkinter.Menubutton(tk, text="选择路径", font=字体大小, background="#FF8040")
-"""---------------------------------  布局设置  ---------------------------------------------"""
-当前账号框.place(x=10, y=0, width=180, height=30)
-当前服显示框.place(x=200, y=0, width=100, height=30)
-当前路径显示.place(x=300, y=0, width=700, height=30)
-选择路径按钮.place(x=900, y=0, width=100, height=30)
-"""--------------------------------     主要控件     -------------------------------------------"""
-启动按钮.place(x=300, y=350, width=150, height=50)
-切换账号按钮.place(x=500, y=350, width=170, height=50)
-"""---------------------------------  菜单   ---------------------------------------------"""
-菜单()   #将任务栏菜单放在一个函数
-"""---------------------------------  背景  --------------------------------------------------"""
-"""---------------------------------  窗口启动  ---------------------------------------------"""
-tk.mainloop()
+if __name__ == '__main__':
+    """---------------------------------  初始化  ------------------------------------------"""
+    threading.Thread(group=None, args=(), kwargs={}, daemon=None, target=检查更新).start()
+    threading.Thread(group=None, args=(), kwargs={}, daemon=None, target=记录登录次数).start()  # 记录登录次数的线程
+    tk = tkinter.Tk()
+    当前服显示信息 = tkinter.Variable()
+    当前服显示信息.set(获取当前服(True))
+    是否需要破解帧率启动 = tkinter.StringVar()
+    是否需要破解帧率启动.set("1")  # 0是未选中，1是选中
+    当前路径 = tkinter.Variable()
+    当前路径.set(获取路径())
+    当前要启动的账号 = tkinter.Variable()
+    当前要启动的账号.set("当前账号:默认")
+    """---------------------------------  背景设置  ---------------------------------------------"""
+    背景图片=获取背景图片()
+    背景 = tkinter.Label(tk, image=背景图片)
+    背景.pack()
+    """---------------------------------  控件设置  ---------------------------------------------"""
+    当前账号框 = tkinter.Label(tk, font=字体大小, background="#FFFF6F", textvariable=当前要启动的账号, anchor="w")
+    当前路径显示 = tkinter.Label(tk, font=字体大小, background="#FFFF6F", textvariable=当前路径, anchor="w")
+    当前服显示框 = tkinter.Label(tk, font=字体大小, background="#FFFF6F", textvariable=当前服显示信息, anchor="w")
+    启动按钮 = tkinter.Menubutton(tk, text='启动', font=字体大小)
+    切换账号按钮 = tkinter.Menubutton(tk, text='选择要切换的账号', font=字体大小)
+    选择路径按钮 = tkinter.Menubutton(tk, text="选择路径", font=字体大小, background="#FF8040")
+    """---------------------------------  布局设置  ---------------------------------------------"""
+    当前账号框.place(x=10, y=0, width=180, height=30)
+    当前服显示框.place(x=200, y=0, width=100, height=30)
+    当前路径显示.place(x=300, y=0, width=700, height=30)
+    选择路径按钮.place(x=900, y=0, width=100, height=30)
+    """--------------------------------     主要控件     -------------------------------------------"""
+    启动按钮.place(relx=0.3, rely=0.8, relwidth=0.1, relheight=0.07)
+    切换账号按钮.place(relx=0.5, rely=0.8, relwidth=0.1, relheight=0.07)
+    """---------------------------------  菜单   ---------------------------------------------"""
+    菜单()  # 将任务栏菜单放在一个函数
+    """---------------------------------  窗口配置  ----------------------------------------"""
+    tk.title("原神转服器  持续更新  作者--惠惠  bilibili:是惠惠不是惠惠 QQ群号:788395240")
+    tk.geometry("{}x{}".format(背景图片.width(), 背景图片.height()))  # 图片多大，窗口就多大
+    # tk.resizable(False, False)
+    tk.iconbitmap("data/资源/图标.ico")
+    路径 = 获取路径()
+    """---------------------------------  窗口启动  ---------------------------------------------"""
+    tk.mainloop()
