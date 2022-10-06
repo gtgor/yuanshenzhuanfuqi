@@ -736,7 +736,7 @@ def 菜单():
         启动菜单.add_cascade(label="国际服启动", command=国际服启动)
         启动菜单.add_separator()     #添加一条线，好看
         启动菜单.add_checkbutton(label="是否破解帧率启动",variable=是否需要破解帧率启动)
-        启动按钮.config(menu=启动菜单)
+        return 启动菜单
 
     def 选择路径菜单_main():
         选择路径菜单 = tkinter.Menu(选择路径按钮,tearoff=False)
@@ -760,6 +760,7 @@ def 菜单():
     tk.config(menu=任务栏_main())
     选择路径按钮.config(menu=选择路径菜单_main())
     切换账号按钮.config(menu=切换账号菜单_main())
+    启动按钮.config(menu=启动菜单_main())
 
 
 
