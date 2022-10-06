@@ -13,6 +13,7 @@ import webbrowser
 import winreg
 import pyautogui
 from pynput.keyboard import Listener
+from tkinter.ttk import Separator
 try:
     import cv2
 except:
@@ -497,6 +498,8 @@ def 检查更新(是否提示已是最新版本=False):
 def 联系惠惠():
     提示("惠惠QQ", "惠惠QQ1621320515")
 
+def 贡献榜():
+    提示("贡献榜  感谢大家对惠惠的支持，希望惠惠可以帮到越来越多的人",requests.get("http://8.142.28.115/贡献榜").text)
 
 def 管理账号窗口():
     root = tkinter.Tk()
@@ -673,7 +676,7 @@ def 惠惠自动化工具():
         """-----------------------init----------------------------"""
         按键监听()
         """-----------------------windows config------------------"""
-        tk.geometry("420x200")
+        tk.geometry("420x400")
         tk.title("惠惠自动化工具")
         tk.resizable(False, False)
         try:
@@ -682,10 +685,13 @@ def 惠惠自动化工具():
             tk.iconbitmap(bitmap="data/资源/图标.ico")
         tk.attributes("-topmost", 1)
         """-------------------------label-------------------------"""
+        tkinter.Label(tk,text="自动化工具配置，使用方法见主页帮助").place(x=0,y=0)
         tkinter.Scale(tk, from_=40, to=1, resolution=1, length=150, sliderlength=20, label='次数', command=修改强化次数).place(
-            x=320, y=10)
+            x=320, y=40)
         tkinter.Scale(tk, from_=0.3, to=0.1, resolution=0.01, length=150, sliderlength=20, label='间隔时间',
-                      command=修改强化间隔时间).place(x=10, y=10)
+                      command=修改强化间隔时间).place(x=10, y=40)
+        tkinter.ttk.Separator(tk,orient=tkinter.HORIZONTAL).place(x=20,y=200,width=380)
+        tkinter.Label(tk,text="自动过剧情开关：F10").place(x=0,y=250)
 
         """------------------------menu---------------------------"""
         任务栏 = tkinter.Menu(tk)
@@ -695,46 +701,65 @@ def 惠惠自动化工具():
 
 
 def 菜单():
-    任务栏 = tkinter.Menu(tk,tearoff=False)
-    任务栏.add_cascade(label="给惠惠打赏", command=给惠惠打赏按钮)
-    任务栏.add_cascade(label="从群文件获取依赖", command=将依赖包放进data文件夹)
-    任务栏.add_cascade(label="更换背景", command=更换背景)
-    任务栏.add_cascade(label="联系惠惠", command=联系惠惠)
-    任务栏.add_cascade(label="检查更新", command=lambda: 检查更新(True))
-    任务栏.add_cascade(label="管理账号",command=管理账号窗口)
-    工具箱 = tkinter.Menu(tk,tearoff=False)
-    工具箱.add_cascade(label="惠惠自动强化器", command=惠惠自动化工具)
-    工具箱.add_cascade(label="破解帧率启动", command=破解帧率启动)
-    任务栏.add_cascade(label="工具箱", menu=工具箱)
-    帮助 = tkinter.Menu(tk,tearoff=False)
-    帮助.add_cascade(label="惠惠原神转服器", command=lambda :提示(帮助,open("data/说明文档/原神转服器.md",encoding="utf-8").read()))
-    帮助.add_cascade(label="惠惠自动化工具", command=lambda :提示(帮助,open("data/说明文档/惠惠自动化工具.md",encoding="utf-8").read()))
-    帮助.add_cascade(label="破解帧率启动器", command=lambda :提示(帮助,open("data/说明文档/帧率破解器.md",encoding="utf-8").read()))
-    任务栏.add_cascade(label="帮助", menu=帮助)
-    if 获取兑换码(False) == "获取成功":
-        任务栏.add_cascade(label="获取兑换码", command=lambda: 获取兑换码(True))
-    tk.config(menu=任务栏)
-    选择路径菜单 = tkinter.Menu(选择路径按钮,tearoff=False)
-    选择路径菜单.add_cascade(label="从桌面快捷方式选择原神路径", command=从桌面快捷方式选择原神路径)
-    选择路径菜单.add_cascade(label="手动选择路径", command=手动选择原神路径)
-    选择路径按钮.config(menu=选择路径菜单)
-    启动菜单 = tkinter.Menu(启动按钮,tearoff=False)
-    启动菜单.add_cascade(label="官服启动", command=官服启动)
-    启动菜单.add_cascade(label="b服启动", command=b服启动)
-    启动菜单.add_cascade(label="国际服启动", command=国际服启动)
-    启动菜单.add_separator()     #添加一条线，好看
-    启动菜单.add_checkbutton(label="是否破解帧率启动",variable=是否需要破解帧率启动)
-    启动按钮.config(menu=启动菜单)
-    切换账号菜单 = tkinter.Menu(切换账号按钮,tearoff=False)
-    try:
-        最终命令 = """"""
-        命令 = "切换账号菜单.add_cascade(label=获取所有保存的账号()[菜单下标],command=lambda :切换账号命令(菜单下标))"   #之所以要这样写是因为，假如直接使用，那么所以选项都是一样的
-        for i in range(1000):
-            最终命令 = 最终命令 + 命令.replace("菜单下标", str(i)) + "\n"
-        exec(最终命令)
-    except:
-        pass
-    切换账号按钮.config(menu=切换账号菜单)
+    def 任务栏_main():
+        任务栏 = tkinter.Menu(tk,tearoff=False)
+        def 任务栏_工具箱():
+            工具箱 = tkinter.Menu(tk,tearoff=False)
+            工具箱.add_cascade(label="惠惠自动化工具", command=惠惠自动化工具)
+            工具箱.add_cascade(label="破解帧率启动", command=破解帧率启动)
+            任务栏.add_cascade(label="工具箱", menu=工具箱)
+        def 任务栏_帮助():
+            帮助 = tkinter.Menu(tk,tearoff=False)
+            帮助.add_cascade(label="惠惠原神转服器", command=lambda :提示(帮助,open("data/说明文档/原神转服器.md",encoding="utf-8").read()))
+            帮助.add_cascade(label="惠惠自动化工具", command=lambda :提示(帮助,open("data/说明文档/惠惠自动化工具.md",encoding="utf-8").read()))
+            帮助.add_cascade(label="破解帧率启动器", command=lambda :提示(帮助,open("data/说明文档/帧率破解器.md",encoding="utf-8").read()))
+            任务栏.add_cascade(label="帮助", menu=帮助)
+        def 任务栏_获取兑换码():
+            if 获取兑换码(False) == "获取成功":
+                    任务栏.add_cascade(label="获取兑换码", command=lambda: 获取兑换码(True))
+        任务栏.add_cascade(label="给惠惠打赏", command=给惠惠打赏按钮)
+        任务栏.add_cascade(label="从群文件获取依赖", command=将依赖包放进data文件夹)
+        任务栏.add_cascade(label="更换背景", command=更换背景)
+        任务栏.add_cascade(label="联系惠惠", command=联系惠惠)
+        任务栏.add_cascade(label="检查更新", command=lambda: 检查更新(True))
+        任务栏.add_cascade(label="管理账号",command=管理账号窗口)
+        任务栏_工具箱()
+        任务栏_帮助()
+        任务栏.add_cascade(label="贡献榜",command=贡献榜)
+        任务栏_获取兑换码()
+        return 任务栏
+
+    def 启动菜单_main():
+        启动菜单 = tkinter.Menu(启动按钮,tearoff=False)
+        启动菜单.add_cascade(label="官服启动", command=官服启动)
+        启动菜单.add_cascade(label="b服启动", command=b服启动)
+        启动菜单.add_cascade(label="国际服启动", command=国际服启动)
+        启动菜单.add_separator()     #添加一条线，好看
+        启动菜单.add_checkbutton(label="是否破解帧率启动",variable=是否需要破解帧率启动)
+        启动按钮.config(menu=启动菜单)
+
+    def 选择路径菜单_main():
+        选择路径菜单 = tkinter.Menu(选择路径按钮,tearoff=False)
+        选择路径菜单.add_cascade(label="从桌面快捷方式选择原神路径", command=从桌面快捷方式选择原神路径)
+        选择路径菜单.add_cascade(label="手动选择路径", command=手动选择原神路径)
+        return 选择路径菜单
+
+    def 切换账号菜单_main():
+        切换账号菜单 = tkinter.Menu(切换账号按钮,tearoff=False)
+        try:
+            最终命令 = """"""
+            命令 = "切换账号菜单.add_cascade(label=获取所有保存的账号()[菜单下标],command=lambda :切换账号命令(菜单下标))"   #之所以要这样写是因为，假如直接使用，那么所以选项都是一样的
+            for i in range(1000):
+                最终命令 = 最终命令 + 命令.replace("菜单下标", str(i)) + "\n"
+            exec(最终命令)
+        except:
+            pass
+        return 切换账号菜单
+
+
+    tk.config(menu=任务栏_main())
+    选择路径按钮.config(menu=选择路径菜单_main())
+    切换账号按钮.config(menu=切换账号菜单_main())
 
 
 
@@ -783,7 +808,3 @@ except:
 """---------------------------------  背景  --------------------------------------------------"""
 """---------------------------------  窗口启动  ---------------------------------------------"""
 tk.mainloop()
-try:
-    cv2.destroyAllWindonws()
-except:
-    pass
