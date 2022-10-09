@@ -1,9 +1,6 @@
 # -*- coding: utf-8 -*-
 
-print("""
------------------程序开始运行----------------------
-本程序是纯python开源项目，目的是为了为更多的人提供帮助与学习
-""")
+
 import os
 import shutil
 import subprocess
@@ -180,6 +177,10 @@ def 官转b():
     except Exception as err:
         pass
     shutil.unpack_archive("data/依赖包/官转b.zip", extract_dir=获取路径(), format=None)  # 再解压
+    try:
+        os.remove(获取路径() + "\YuanShen_Data\Plugins\metakeeper.dll")  # 删除metakeeper.dll
+    except Exception as err:
+        pass
 
 
 def b转官():
@@ -237,6 +238,22 @@ FPS=200""".format(获取路径(), 原神文件名))
                      target=subprocess.call).start()  # 创建线程，防止游戏启动时转服器卡死
 
 
+def 刷新当前服显示框的字体颜色():
+    """
+    刷新当前服字体颜色
+    如果未选择服，字体为红色
+    如果已选择服，字体为绿色
+    """
+    try:     #加上try是为了防止调用此函数时，当前服显示框没有初始化
+        if 当前服显示信息.get() == "未选择路径":
+            当前服显示框.config(fg="red")
+        else:
+            当前服显示框.config(fg="green")
+        当前服显示框.update()
+    except:
+        pass
+
+
 def 获取当前服(是否返回未选择=True):
     try:
         config = open(获取路径() + "\config.ini", "r").read()
@@ -287,6 +304,7 @@ def 官服启动():
     if 当前服 == "None":
         b转官()
     当前服显示信息.set(获取当前服())
+    刷新当前服显示框的字体颜色()
     启动("官服")
 
 
@@ -323,6 +341,7 @@ def 国际服启动():
         if 当前服 == "国际服":
             pass
         当前服显示信息.set(获取当前服())
+        刷新当前服显示框的字体颜色()
         启动("国际服")
     else:
         提示("系统提示", "依赖包没有下载，请前往q群下载")
@@ -341,6 +360,7 @@ def b服启动():
     if 当前服 == "None":
         官转b()
     当前服显示信息.set(获取当前服())
+    刷新当前服显示框的字体颜色()
     启动("b服")
 
 
@@ -363,6 +383,7 @@ def 从桌面快捷方式选择原神路径():
             # print(原神路径)
             保存路径(原神路径)
             当前服显示信息.set(获取当前服(True))
+            刷新当前服显示框的字体颜色()
 
 
 def 手动选择原神路径():
@@ -372,6 +393,7 @@ def 手动选择原神路径():
         保存路径(路径)
         当前路径.set(open("data/配置信息/原神路径", "r").read())
         当前服显示信息.set(获取当前服())
+        刷新当前服显示框的字体颜色()
         提示("可爱の惠惠の提示", "路径保存成功")
     else:
         提示("可爱の惠惠の提示", "请选择'Genshin Impact Game'文件夹哟~")
@@ -510,7 +532,7 @@ def 检查更新(是否提示已是最新版本=False):
         更新窗口 = tkinter.Tk()
         更新窗口.title("是否更新新版本")
         更新窗口.iconbitmap("data/资源/图标.ico")
-        tkinter.Label(更新窗口, text=更新提示, font=字体大小).pack()
+        tkinter.Label(更新窗口, text=更新提示, font=字体大小, anchor="w", justify="left").pack()
         更新窗口.resizable(False, False)
 
         def 下载新版本():
@@ -818,6 +840,7 @@ if __name__ == '__main__':
     tk = tkinter.Tk()
     当前服显示信息 = tkinter.Variable()
     当前服显示信息.set(获取当前服(True))
+    #刷新当前服显示框的字体颜色()    #当前服为初始化，所以放在初始化后，启动窗口前的，自己找
     是否需要破解帧率启动 = tkinter.StringVar()
     是否需要破解帧率启动.set("1")  # 0是未选中，1是选中
     当前路径 = tkinter.Variable()
@@ -833,7 +856,7 @@ if __name__ == '__main__':
     当前路径显示 = tkinter.Label(tk, font=字体大小, background="#FFFF6F", textvariable=当前路径, anchor="w")
     当前服显示框 = tkinter.Label(tk, font=字体大小, background="#FFFF6F", textvariable=当前服显示信息, anchor="w")
     启动按钮 = tkinter.Menubutton(tk, text='启动', font=字体大小)
-    切换账号按钮 = tkinter.Menubutton(tk, text='选择要切换的账号', font=字体大小)
+    切换账号按钮 = tkinter.Menubutton(tk, text='账号', font=字体大小)
     选择路径按钮 = tkinter.Menubutton(tk, text="选择路径", font=字体大小, background="#FF8040")
     """---------------------------------  布局设置  ---------------------------------------------"""
     当前账号框.place(x=10, y=0, width=180, height=30)
@@ -841,9 +864,9 @@ if __name__ == '__main__':
     当前路径显示.place(x=300, y=0, width=700, height=30)
     选择路径按钮.place(x=900, y=0, width=100, height=30)
     """--------------------------------     主要控件     -------------------------------------------"""
-    启动按钮.place(relx=0.3, rely=0.8, relwidth=0.1, relheight=0.07)
-    切换账号按钮.place(relx=0.5, rely=0.8, relwidth=0.1, relheight=0.07)
-    """---------------------------------  菜单   ---------------------------------------------"""
+    启动按钮.place(relx=0.3, rely=0.8, relwidth=0.05, relheight=0.07)
+    切换账号按钮.place(relx=0.5, rely=0.8, relwidth=0.05, relheight=0.07)
+    """---------------0------------------  菜单   ---------------------------------------------"""
     菜单()  # 将任务栏菜单放在一个函数
     """---------------------------------  窗口配置  ----------------------------------------"""
     tk.title("原神转服器  持续更新  作者--惠惠  bilibili:是惠惠不是惠惠 QQ群号:788395240")
@@ -851,5 +874,6 @@ if __name__ == '__main__':
     # tk.resizable(False, False)
     tk.iconbitmap("data/资源/图标.ico")
     路径 = 获取路径()
+    刷新当前服显示框的字体颜色()
     """---------------------------------  窗口启动  ---------------------------------------------"""
     tk.mainloop()
