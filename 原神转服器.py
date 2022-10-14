@@ -11,20 +11,35 @@ import webbrowser
 import winreg
 from tkinter.ttk import Separator
 
-import pyautogui
-from pynput.keyboard import Listener
-
-try:
-    import cv2
-except:
-    pass
 import filedialogs
+import pyautogui
 import requests
 import win32com.client
 from PIL import Image
-from PIL import ImageTk
+from pynput.keyboard import Listener
 
 字体大小 = 10
+
+
+def 配置信息(文件名, data=False):
+    """
+    检查是否传入data，
+    如果传入，则修改文件内容
+    否则返回文件内容
+    """
+    if data == False:  # 如果没有传入data
+        try:
+            文件内容 = open("data/配置信息/" + 文件名, encoding="utf-8").read()
+        except:
+            文件内容 = open("data/配置信息/" + 文件名, encoding="gbk").read()
+        return 文件内容
+    # 如果传入了data
+    try:
+        文件 = open("data/配置信息/" + 文件名, "w", encoding="utf-8")
+    except:
+        文件 = open("data/配置信息/" + 文件名, "w", encoding="gbk")
+    文件.write(data)
+    文件.close()
 
 
 def 获取背景图片():
@@ -37,29 +52,6 @@ def 获取背景图片():
 
 def 记录登录次数():
     requests.get("http://8.142.28.115:11451/记录")  # 向服务器记录一次登录次数，服务器每天都会记录启动次数
-
-
-def 获取背景配置():
-    return open("data/配置信息/背景配置", 'r').read()  # 背景配置保存在data文件里里，里面只有两种状态，当背景配置为1时，显示图片背景。当背景配置为2时，显示视频背景
-
-
-def 播放视频(Label):  # 这个函数我也不是很懂，是从网上抄来的
-    try:
-        video_path = "data/资源/背景.mp4"
-        if video_path[-3:] == "mp4":
-            video = cv2.VideoCapture(video_path)
-            while video.isOpened():
-                ret, frame = video.read()  # 读取照片
-                # print('读取成功')
-                if ret == True:
-                    img = cv2.cvtColor(frame, cv2.COLOR_BGR2RGBA)  # 转换颜色使播放时保持原有色彩
-                    current_image = Image.fromarray(img).resize((1000, 618))  # 将图像转换成Image对象
-                    imgtk = ImageTk.PhotoImage(image=current_image)  # 将图片转换成ImageTk可以识别的对象
-                    Label.imgtk = imgtk
-                    Label.config(image=imgtk)  # 配置图片
-                    Label.update()  # 每执行以此只显示一张图片，需要更新窗口实现视频播放
-    except:
-        pass
 
 
 def 检查国际服依赖包是否下载():
@@ -81,7 +73,7 @@ def 提示(title, data):
     错误提示 = tkinter.Tk()
     错误提示.title(title)
     错误提示.iconbitmap("data/资源/图标.ico")
-    tkinter.Label(错误提示, font=字体大小, text=data).pack()
+    tkinter.Label(错误提示, font=字体大小, text=data, anchor="w", justify="left").pack()
     错误提示.resizable(False, False)
     错误提示.mainloop()
 
@@ -244,7 +236,7 @@ def 刷新当前服显示框的字体颜色():
     如果未选择服，字体为红色
     如果已选择服，字体为绿色
     """
-    try:     #加上try是为了防止调用此函数时，当前服显示框没有初始化
+    try:  # 加上try是为了防止调用此函数时，当前服显示框没有初始化
         if 当前服显示信息.get() == "未选择路径":
             当前服显示框.config(fg="red")
         else:
@@ -292,22 +284,6 @@ channel=""" in config:
         return False
 
 
-def 官服启动():
-    当前服 = str(获取当前服())
-    print(当前服 + " ----- 官服")
-    if 当前服 == "官服":
-        pass
-    if 当前服 == "b服":
-        b转官()
-    if 当前服 == "国际服":
-        国转官()
-    if 当前服 == "None":
-        b转官()
-    当前服显示信息.set(获取当前服())
-    刷新当前服显示框的字体颜色()
-    启动("官服")
-
-
 def 判断依赖包是否下载():
     依赖包是否下载 = True
     try:
@@ -326,7 +302,48 @@ def 判断依赖包是否下载():
     return 依赖包是否下载
 
 
+def 关闭原神主程序():
+    subprocess.call("taskkill /f /t /im YuanShen.exe")
+    subprocess.call("taskkill /f /t /im GenshinImpact.exe")
+
+
+def 官服启动():
+    关闭原神主程序()
+    当前服 = str(获取当前服())
+    print(当前服 + " ----- 官服")
+    if 当前服 == "官服":
+        pass
+    if 当前服 == "b服":
+        b转官()
+    if 当前服 == "国际服":
+        国转官()
+    if 当前服 == "None":
+        b转官()
+    当前服显示信息.set(获取当前服())
+    刷新当前服显示框的字体颜色()
+    启动("官服")
+
+
+def b服启动():
+    关闭原神主程序()
+    当前服 = str(获取当前服())
+    print(当前服 + " ----- b服")
+    if 当前服 == "官服":
+        官转b()
+    if 当前服 == "b服":
+        pass
+    if 当前服 == "国际服":
+        国转官()
+        官转b()
+    if 当前服 == "None":
+        官转b()
+    当前服显示信息.set(获取当前服())
+    刷新当前服显示框的字体颜色()
+    启动("b服")
+
+
 def 国际服启动():
+    关闭原神主程序()
     依赖包是否下载 = 判断依赖包是否下载()
     当前服 = str(获取当前服())
     print(当前服 + " ----- 国际服")
@@ -347,23 +364,6 @@ def 国际服启动():
         提示("系统提示", "依赖包没有下载，请前往q群下载")
 
 
-def b服启动():
-    当前服 = str(获取当前服())
-    print(当前服 + " ----- b服")
-    if 当前服 == "官服":
-        官转b()
-    if 当前服 == "b服":
-        pass
-    if 当前服 == "国际服":
-        国转官()
-        官转b()
-    if 当前服 == "None":
-        官转b()
-    当前服显示信息.set(获取当前服())
-    刷新当前服显示框的字体颜色()
-    启动("b服")
-
-
 def 从桌面快捷方式选择原神路径():
     def 获取快捷方式指向的路径(路径):  # 调用api
         shell = win32com.client.Dispatch("WScript.Shell")
@@ -371,7 +371,8 @@ def 从桌面快捷方式选择原神路径():
         return shortcut.Targetpath
 
     for 文件 in 获取目录下的文件(获取桌面路径()):
-        if r"\Desktop\原神.lnk" in 文件:
+        print(文件)
+        if r"\原神.lnk" in 文件:
             启动器路径 = 获取快捷方式指向的路径(文件)
             启动器配置文件路径 = 启动器路径.replace(r"\launcher.exe", r"\config.ini")
             配置信息 = open(启动器配置文件路径, "r").read()
@@ -481,37 +482,105 @@ def 给惠惠打赏按钮():
     im.show()
 
 
-def 更改图片尺寸(path1, path2, x, y):
-    img = cv2.imread(path1)
-    size = (x, y)
-    img = cv2.resize(img, size)
-    cv2.imwrite(path2, img)
+def 调整图片尺寸():
+    def 更改图片尺寸(file_in, file_out, width, height):
+        image = Image.open(file_in)
+        resized_image = image.resize((width, height), Image.ANTIALIAS)
+        resized_image.save(file_out)
+
+    y_屏幕 = tk.winfo_screenheight()
+    x_屏幕 = tk.winfo_screenwidth()
+    x_图片 = 获取背景图片().width()
+    y_图片 = 获取背景图片().height()
+    print("""
+屏幕x={}
+屏幕y={}
+图片x={}
+图片y={}
+    """.format(x_屏幕, y_屏幕, x_图片, y_图片))
+    if x_图片 > x_屏幕:
+        x_缩小比例 = x_屏幕 / x_图片
+    else:
+        x_缩小比例 = 1
+    if y_图片 > y_屏幕:
+        y_缩小比例 = y_屏幕 / y_图片
+    else:
+        y_缩小比例 = 1
+    """先确定下一个最终缩小比例，如果x和y都要缩小，则改变此值"""
+    最终缩小比例 = 1
+    if x_缩小比例 < 1:
+        最终缩小比例 = x_缩小比例
+    if y_缩小比例 < 1:
+        最终缩小比例 = y_缩小比例
+    """如果x和y都需要缩小，则判断谁缩的更小"""
+    if x_缩小比例 < 1 and y_缩小比例 < 1:
+        if x_缩小比例 > y_缩小比例:
+            最终缩小比例 = y_缩小比例
+        else:
+            最终缩小比例 = x_缩小比例
+    更改图片尺寸("data/资源/背景.png", "data/资源/背景.png", int(x_图片 * 最终缩小比例), int(y_图片 * 最终缩小比例))
+
+
+def 生成背景(类型):
+    if 类型 == "全部":
+        url = "https://iw233.cn/api.php?sort=random"
+    if 类型 == "银发":
+        url = "https://iw233.cn/api.php?sort=yin"
+    if 类型 == "兽耳":
+        url = "https://iw233.cn/api.php?sort=cat"
+    if 类型 == "星空":
+        url = "https://iw233.cn/api.php?sort=xing"
+    if 类型 == "色图":
+        url = "http://8.142.28.115:13131/色图"
+    print(url)
+    data = requests.get(url).content
+    a = open("data/资源/背景.png", "wb")
+    print(data)
+    a.write(data)
+    a.close()
+    Image.open("data/资源/背景.png").save("data/资源/背景.png")
+    调整图片尺寸()
+
+
+def 刷新背景():
+    背景图片.config(file="data/资源/背景.png")
+    tk.geometry("{}x{}".format(背景图片.width(), 背景图片.height()))  # 图片多大，窗口就多大
+    tk.update()
+
+
+def 随机背景(类型):
+    生成背景(类型)
+    刷新背景()
+
+
+def 更改图片保存的文件夹():
+    配置信息("背景图片的保存位置", filedialogs.open_folder_dialog(encoding="GBK"))
+    提示("系统提示", "背景图片保存路径已更改为:'{}'".format(配置信息("背景图片的保存位置")))
+
+
+def 保存背景():
+    def 获取没有使用的图片名():
+        for i in range(99999):
+            try:
+                open("{}/{}.png".format(获取桌面路径(), i))
+            except:
+                return i
+
+    if 配置信息("背景图片的保存位置") == "":
+        更改图片保存的文件夹()
+
+    print("保存背景   data/资源/背景.png  -->  {}\{}.png".format(配置信息("背景图片的保存位置"), 获取没有使用的图片名()))
+    shutil.copy("data/资源/背景.png", 配置信息("背景图片的保存位置") + "\{}.png".format(获取没有使用的图片名()))
+    提示("系统提示", "背景已保存至" + 配置信息("背景图片的保存位置"))
 
 
 def 更换背景():
     from tkinter import filedialog
-    file_path = \
-    filedialog.askopenfilenames(title='请选择一个文件', filetypes=[('图片', '.png'), ('图片', '.jpg'), ("视频", ".mp4")])[0]
-    a = open("data/配置信息/背景配置", "w")
+    file_path = filedialog.askopenfilenames(title='请选择一个文件', filetypes=[('图片', '.png'), ('图片', '.jpg')])[0]
     print(file_path)
-    if "jpg" in file_path:
-        print("jpg图片")
-        Image.open(file_path).save("data/资源/自定义背景图片.png")
-        a.write("1")
-        背景图片.config(file="data/资源/自定义背景图片.png")
-    if "png" in file_path:
-        print("png图片")
-        shutil.copy(file_path, "data/资源/自定义背景图片.png")
-        a.write("1")
-        背景图片.config(file="data/资源/自定义背景图片.png")
-        背景.update()
-    if "mp4" in file_path:
-        print("视频")
-        shutil.copy(file_path, "data/资源/背景.mp4")
-        a.write("2")
-        播放视频(背景)
-        背景.update()
-    a.close()
+    Image.open(file_path).save("data/资源/自定义背景图片.png")
+    背景图片.config(file="data/资源/自定义背景图片.png")
+    tk.geometry("{}x{}".format(背景图片.width(), 背景图片.height()))  # 图片多大，窗口就多大
     tk.update()
 
 
@@ -723,13 +792,11 @@ def 惠惠自动化工具():
         with Listener(判断是否启动函数) as listener:
             listener.join()
 
-    def 按键监听():
-        监听线程 = threading.Thread(group=None, args=(), kwargs={}, daemon=None, target=_按键监听)
-        监听线程.start()
-
     if __name__ == '__main__':
         """-----------------------init----------------------------"""
-        按键监听()
+        监听线程 = threading.Thread(group=None, args=(), kwargs={}, daemon=None, target=_按键监听)
+        监听线程.setDaemon(True)  # 设置成守护线程，免得窗口没了，线程还在跑
+        监听线程.start()
         """-----------------------windows config------------------"""
         tk.geometry("420x400")
         tk.title("惠惠自动化工具")
@@ -751,7 +818,15 @@ def 惠惠自动化工具():
         """------------------------menu---------------------------"""
         任务栏 = tkinter.Menu(tk)
         tk.config(menu=任务栏)
-        tk.mainloop()
+
+
+def 输出基本信息():
+    print("-" * 20)
+    print("桌面路径=" + 获取桌面路径())
+    print("原神路径=" + 配置信息("原神路径"))
+    print("背景图片的保存位置=" + 配置信息("背景图片的保存位置"))
+    print("默认启动方式=" + 配置信息("默认启动方式"))
+    print("-" * 20)
 
 
 def 菜单():
@@ -781,7 +856,6 @@ def 菜单():
         def 任务栏_功能():
             功能 = tkinter.Menu(tk, tearoff=False)
             功能.add_cascade(label="检查更新", command=lambda: 检查更新(True))
-            功能.add_cascade(label="更换背景", command=更换背景)
             功能.add_cascade(label="从群文件获取依赖", command=将依赖包放进data文件夹)
             任务栏.add_cascade(label="功能", menu=功能)
 
@@ -805,7 +879,8 @@ def 菜单():
         启动菜单.add_cascade(label="b服启动", command=b服启动)
         启动菜单.add_cascade(label="国际服启动", command=国际服启动)
         启动菜单.add_separator()  # 添加一条线，好看
-        启动菜单.add_checkbutton(label="是否破解帧率启动", variable=是否需要破解帧率启动)
+        启动菜单.add_checkbutton(label="是否破解帧率启动", variable=是否需要破解帧率启动,
+                             command=lambda: 配置信息("data/配置信息/默认启动方式", 是否需要破解帧率启动.get()))
         return 启动菜单
 
     def 选择路径菜单_main():
@@ -828,10 +903,28 @@ def 菜单():
             pass
         return 切换账号菜单
 
+    """以下是菜单"""
     tk.config(menu=任务栏_main())
     选择路径按钮.config(menu=选择路径菜单_main())
     切换账号按钮.config(menu=切换账号菜单_main())
     启动按钮.config(menu=启动菜单_main())
+
+
+def 背景的右键菜单(鼠标的点击位置):
+    界面 = tkinter.Menu(tk, tearoff=False)
+    界面.add_cascade(label="自定义背景", command=更换背景)
+    界面.add_separator()  # 添加一条线，好看
+    界面.add_cascade(label="随机背景", command=lambda: 随机背景("全部"))
+    界面.add_cascade(label="随机背景(银发)", command=lambda: 随机背景("银发"))
+    界面.add_cascade(label="随机背景(兽耳)", command=lambda: 随机背景("兽耳"))
+    界面.add_cascade(label="随机背景(星空)", command=lambda: 随机背景("星空"))
+    界面.add_cascade(label="随机背景(色图)", command=lambda: 随机背景("色图"))
+    界面.add_separator()  # 添加一条线，好看
+    界面.add_cascade(label="保存背景图片", command=保存背景)
+    界面.add_separator()  # 添加一条线，好看
+    界面.add_cascade(label="更改背景保存位置", command=更改图片保存的文件夹)
+    界面.post(鼠标的点击位置.x_root, 鼠标的点击位置.y_root)
+
 
 if __name__ == '__main__':
     """---------------------------------  初始化  ------------------------------------------"""
@@ -840,16 +933,18 @@ if __name__ == '__main__':
     tk = tkinter.Tk()
     当前服显示信息 = tkinter.Variable()
     当前服显示信息.set(获取当前服(True))
-    #刷新当前服显示框的字体颜色()    #当前服为初始化，所以放在初始化后，启动窗口前的，自己找
+    # 刷新当前服显示框的字体颜色()    #当前服为初始化，所以放在初始化后，启动窗口前的，自己找
     是否需要破解帧率启动 = tkinter.StringVar()
-    是否需要破解帧率启动.set("1")  # 0是未选中，1是选中
+    是否需要破解帧率启动.set(配置信息("默认启动方式"))  # 0是未选中，1是选中
     当前路径 = tkinter.Variable()
     当前路径.set(获取路径())
     当前要启动的账号 = tkinter.Variable()
     当前要启动的账号.set("当前账号:默认")
     """---------------------------------  背景设置  ---------------------------------------------"""
-    背景图片=获取背景图片()
-    背景 = tkinter.Label(tk, image=背景图片)
+    背景图片 = 获取背景图片()
+    背景 = tkinter.Label(tk, image=背景图片, cursor="hand2")
+    背景.bind("<Button-3>", 背景的右键菜单)
+    背景.bind("<Button-1>", 背景的右键菜单)
     背景.pack()
     """---------------------------------  控件设置  ---------------------------------------------"""
     当前账号框 = tkinter.Label(tk, font=字体大小, background="#FFFF6F", textvariable=当前要启动的账号, anchor="w")
@@ -859,21 +954,23 @@ if __name__ == '__main__':
     切换账号按钮 = tkinter.Menubutton(tk, text='账号', font=字体大小)
     选择路径按钮 = tkinter.Menubutton(tk, text="选择路径", font=字体大小, background="#FF8040")
     """---------------------------------  布局设置  ---------------------------------------------"""
-    当前账号框.place(x=10, y=0, width=180, height=30)
-    当前服显示框.place(x=200, y=0, width=100, height=30)
-    当前路径显示.place(x=300, y=0, width=700, height=30)
-    选择路径按钮.place(x=900, y=0, width=100, height=30)
+    高度 = 0.03
+    当前账号框.place(relx=0, rely=0, relwidth=0.1, relheight=高度)
+    当前服显示框.place(relx=0.1, rely=0, relwidth=0.1, relheight=高度)
+    当前路径显示.place(relx=0.2, rely=0, relwidth=0.8, relheight=高度)
+    选择路径按钮.place(relx=0.8, rely=0, relwidth=0.2, relheight=高度)
     """--------------------------------     主要控件     -------------------------------------------"""
     启动按钮.place(relx=0.3, rely=0.8, relwidth=0.05, relheight=0.07)
     切换账号按钮.place(relx=0.5, rely=0.8, relwidth=0.05, relheight=0.07)
-    """---------------0------------------  菜单   ---------------------------------------------"""
+    """----------------------------------  菜单   ---------------------------------------------"""
     菜单()  # 将任务栏菜单放在一个函数
     """---------------------------------  窗口配置  ----------------------------------------"""
-    tk.title("原神转服器  持续更新  作者--惠惠  bilibili:是惠惠不是惠惠 QQ群号:788395240")
+    tk.title("原神转服器  bilibili:是惠惠不是惠惠")
     tk.geometry("{}x{}".format(背景图片.width(), 背景图片.height()))  # 图片多大，窗口就多大
     # tk.resizable(False, False)
     tk.iconbitmap("data/资源/图标.ico")
     路径 = 获取路径()
     刷新当前服显示框的字体颜色()
+    输出基本信息()
     """---------------------------------  窗口启动  ---------------------------------------------"""
     tk.mainloop()
