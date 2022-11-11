@@ -6,40 +6,45 @@ import shutil
 import subprocess
 import threading
 import time
-import tkinter
 import webbrowser
 import winreg
-from tkinter.ttk import Separator
-
 import filedialogs
 import pyautogui
 import requests
 import win32com.client
 from PIL import Image
 from pynput.keyboard import Listener
+from configparser import ConfigParser
+"""------UI------"""
+import tkinter
+import ttkbootstrap as ttk
+from tkinter.ttk import Separator
+from ttkbootstrap.constants import SUCCESS  #主题
+from tkinter import filedialog  #文件选择对话框
 
-字体大小 = 10
+字体大小 = 30
+服务器 = "http://103.103.200.190"
 
 
-def 配置信息(文件名, data=False):
-    """
-    检查是否传入data，
-    如果传入，则修改文件内容
-    否则返回文件内容
-    """
-    if data == False:  # 如果没有传入data
-        try:
-            文件内容 = open("data/配置信息/" + 文件名, encoding="utf-8").read()
-        except:
-            文件内容 = open("data/配置信息/" + 文件名, encoding="gbk").read()
-        return 文件内容
-    # 如果传入了data
+class 配置:
+    """给文件提供改查操作"""
+    def 读取(配置名,配置类="config",配置文件路径="data/配置信息/config.ini"):
+        配置操作 = ConfigParser()
+        配置操作.read(配置文件路径, encoding="utf-8")
+        return 配置操作[配置类][配置名]
+    def 修改(配置名,内容,配置类="config",配置文件路径="data/配置信息/config.ini"):
+        配置操作 = ConfigParser()
+        配置操作.read(配置文件路径, encoding="utf-8")
+        配置操作[配置类][配置名]=内容
+        配置操作.write(open(配置文件路径,"w",encoding="utf-8"))
+
+
+def 尝试打开(文件名):
     try:
-        文件 = open("data/配置信息/" + 文件名, "w", encoding="utf-8")
+        open(文件名)
+        return True
     except:
-        文件 = open("data/配置信息/" + 文件名, "w", encoding="gbk")
-    文件.write(data)
-    文件.close()
+        False
 
 
 def 获取背景图片():
@@ -50,8 +55,6 @@ def 获取背景图片():
     return 背景图片
 
 
-def 记录登录次数():
-    requests.get("http://8.142.28.115:11451/记录")  # 向服务器记录一次登录次数，服务器每天都会记录启动次数
 
 
 def 检查国际服依赖包是否下载():
@@ -79,7 +82,6 @@ def 提示(title, data):
 
 
 def 获取目录下的文件(rootdir):
-    import os
     _files = []
     # 列出文件夹下所有的目录与文件
     list = os.listdir(rootdir)
@@ -102,10 +104,16 @@ def 获取桌面路径():
 
 
 def 获取兑换码(是否保存到桌面=True):
-    data = requests.get("http://8.142.28.115/原神兑换码").text
+    try:
+        data = requests.get(f"{服务器}:11111/原神兑换码").text
+    except Exception as err:
+        print("获取兑换码失败:"+str(err))
+        return False
     if "404 Not Found" in data:
+        print("没有新的兑换码")
         return False
     if 是否保存到桌面:
+        print("获取兑换码成功")
         a = open(获取桌面路径() + "\\原神兑换码.txt", "w+")
         a.write(data)
         a.close()
@@ -115,16 +123,7 @@ def 获取兑换码(是否保存到桌面=True):
         return "获取成功"
 
 
-def 获取路径():
-    config = "data/配置信息/原神路径"
-    try:
-        data = open(config, encoding="utf-8").read()
-    except:
-        try:
-            data = open(config, encoding="ANSI").read()
-        except:
-            data = open(config, encoding="gbk").read()
-    return data
+
 
 
 def 保存路径(path):
@@ -132,63 +131,62 @@ def 保存路径(path):
     path = path.replace("：", ":")
     path = path.replace("/", r'\惠惠惠惠惠惠惠惠惠惠惠惠惠惠惠惠惠惠惠惠惠惠惠惠')
     path = path.replace("惠惠惠惠惠惠惠惠惠惠惠惠惠惠惠惠惠惠惠惠惠惠惠惠", "")
-    a = open("data/配置信息/原神路径", "w")
-    a.write(path)
-    a.close()
+    配置.修改("原神路径",path)
     当前路径.set(open("data/配置信息/原神路径", "r").read())
 
 
 def 获取文件大小(文件):
     stat_info = os.stat(文件)
     size = stat_info.st_size
-    return size / 1024 / 1024
+    return int(size / 1024 / 1024)
 
 
 def 官转国():
     try:
-        os.rename(获取路径() + "\YuanShen_Data", 获取路径() + "\GenshinImpact_Data")  # 先改名
-        os.remove(获取路径() + "\YuanShen.exe")  # 删除其他原神服主程序
+        os.rename(配置.读取("原神路径") + "\YuanShen_Data", 配置.读取("原神路径") + "\GenshinImpact_Data")  # 先改名
+        try:
+            os.remove(配置.读取("原神路径") + "\YuanShen.exe")  # 删除其他原神服主程序
+        except:
+            pass
+        shutil.unpack_archive("data/依赖包/官转国.zip", extract_dir=配置.读取("原神路径"), format=None)  # 再解压
+        time.sleep(1)
     except Exception as err:
         print("转国际服错误:" + str(err))
-        return False
-    shutil.unpack_archive("data/依赖包/官转国.zip", extract_dir=获取路径(), format=None)  # 再解压
 
 
 def 国转官():
     try:
-        os.rename(获取路径() + "\GenshinImpact_Data", 获取路径() + "\YuanShen_Data")  # 先改名
-        os.remove(获取路径() + "\GenshinImpact.exe")  # 删除其他原神服主程序
+        os.rename(配置.读取("原神路径")+ "\GenshinImpact_Data", 配置.读取("原神路径")+ "\YuanShen_Data")  # 先改名
+        try:
+            os.remove(配置.读取("原神路径") + "\GenshinImpact.exe")  # 删除其他原神服主程序
+        except:
+            pass
+        shutil.unpack_archive("data/依赖包/国转官.zip", extract_dir=配置.读取("原神路径"), format=None)  # 再解压
     except Exception as err:
-        pass
-    shutil.unpack_archive("data/依赖包/国转官.zip", extract_dir=获取路径(), format=None)  # 再解压
-
+        print("转官服错误:" + str(err))
 
 def 官转b():
     try:
-        os.rename(获取路径() + "\GenshinImpact_Data", 获取路径() + "\YuanShen_Data")  # 先改名
+        os.rename(配置.读取("原神路径") + "\GenshinImpact_Data",配置.读取("原神路径") + "\YuanShen_Data")  # 先改名
     except Exception as err:
         pass
-    shutil.unpack_archive("data/依赖包/官转b.zip", extract_dir=获取路径(), format=None)  # 再解压
+    shutil.unpack_archive("data/依赖包/官转b.zip", extract_dir=配置.读取("原神路径"), format=None)  # 再解压
     try:
-        os.remove(获取路径() + "\YuanShen_Data\Plugins\metakeeper.dll")  # 删除metakeeper.dll
+        os.remove(配置.读取("原神路径") + "\YuanShen_Data\Plugins\metakeeper.dll")  # 删除metakeeper.dll
     except Exception as err:
         pass
 
 
 def b转官():
-    shutil.unpack_archive("data/依赖包/b转官.zip", extract_dir=获取路径(), format=None)  # 先解压
     try:
-        os.remove(获取路径() + "\YuanShen_Data\Plugins\PCGameSDK.dll")  # 删除PCgamesdk
+        os.rename(配置.读取("原神路径") + "\GenshinImpact_Data", 配置.读取("原神路径") + "\YuanShen_Data")  # 先改名
     except Exception as err:
         pass
-
-
-def 启动(服="官服"):
-    if 是否需要破解帧率启动.get() == "1":
-        破解帧率启动()
-    else:
-        普通启动()
-
+    shutil.unpack_archive("data/依赖包/b转官.zip", extract_dir=配置.读取("原神路径"), format=None)  # 先解压
+    try:
+        os.remove(配置.读取("原神路径") + "\YuanShen_Data\Plugins\PCGameSDK.dll")  # 删除PCgamesdk
+    except Exception as err:
+        pass
 
 def 普通启动():
     if 获取当前服() == "官服":
@@ -197,7 +195,7 @@ def 普通启动():
         文件名 = "YuanShen"
     if 获取当前服() == "国际服":
         文件名 = "GenshinImpact"
-    path = 获取路径()
+    path = 配置.读取("原神路径")
     命令一 = "cd {}".format(系统路径转换(path))
     总命令 = "{}:&".format(path[:1]) + 命令一 + "&.\{}".format(文件名)
     print(总命令)
@@ -207,7 +205,6 @@ def 普通启动():
                              "stderr": subprocess.PIPE}, daemon=None,
                      target=subprocess.call).start()  # 创建线程，防止游戏启动时转服器卡死
 
-
 def 破解帧率启动():
     if 获取当前服() == "官服":
         原神文件名 = "YuanShen.exe"
@@ -215,19 +212,24 @@ def 破解帧率启动():
         原神文件名 = "YuanShen.exe"
     if 获取当前服() == "国际服":
         原神文件名 = "GenshinImpact.exe"
-    fps_config = open("data/帧率破解器/fps_config.ini", "w", encoding="GBK")
-    fps_config.write(r"""[Setting]
-Path={}\{}
-FPS=200""".format(获取路径(), 原神文件名))
-    fps_config.close()
-    命令一 = "cd {}".format(系统路径转换(os.getcwd() + "\data\帧率破解器"))
-    总命令 = "{}:&".format(os.getcwd()[:1]) + 命令一 + "&.\{}".format("帧率破解器")
+    命令一 = "cd {}".format(系统路径转换(os.getcwd() + "\data\帧率破解器+反虚化"))
+    总命令 = "{}:&".format(os.getcwd()[:1]) + 命令一 + r"&.\反虚化破帧率"
     print(总命令)
-    # threading.Thread(group=None, args=([总命令]), kwargs={}, daemon=None, target=os.system).start()  # 创建线程，防止游戏启动时转服器卡死
-    threading.Thread(group=None, args=([总命令]),
-                     kwargs={"shell": True, "stdin": subprocess.PIPE, "stdout": subprocess.PIPE,
-                             "stderr": subprocess.PIPE}, daemon=None,
-                     target=subprocess.call).start()  # 创建线程，防止游戏启动时转服器卡死
+    threading.Thread(group=None, args=([总命令]), kwargs={"shell":True, "stdin":subprocess.PIPE, "stdout":subprocess.PIPE, "stderr":subprocess.PIPE}, daemon=None, target=subprocess.call).start()
+    time.sleep(2)
+    path = 配置.读取("原神路径")
+    命令一 = "cd {}".format(系统路径转换(path))
+    总命令 = "{}:&".format(path[:1]) + 命令一 + "&.\{}".format(原神文件名)
+    print(总命令)
+    threading.Thread(group=None, args=([总命令]), kwargs={"shell":True, "stdin":subprocess.PIPE, "stdout":subprocess.PIPE, "stderr":subprocess.PIPE}, daemon=None, target=subprocess.call).start()
+def 启动():
+    if 配置.读取("默认破解帧率")=="1":
+        破解帧率启动()
+    else:
+        普通启动()
+
+
+
 
 
 def 刷新当前服显示框的字体颜色():
@@ -248,7 +250,7 @@ def 刷新当前服显示框的字体颜色():
 
 def 获取当前服(是否返回未选择=True):
     try:
-        config = open(获取路径() + "\config.ini", "r").read()
+        config = open(配置.读取("原神路径") + "\config.ini", "r").read()
     except:
         if 是否返回未选择:
             return "未选择路径"
@@ -267,7 +269,7 @@ def 获取当前服(是否返回未选择=True):
 
 
 def 检查原神data名是国服还是国际服():
-    file_list = os.listdir(获取路径())  # 获取原神路径中的所以文件名
+    file_list = os.listdir(配置.读取("原神路径"))  # 获取原神路径中的所以文件名
     if "YuanShen_Data" in file_list:
         return "国服"
     if "GenshinImpact_Data" in file_list:
@@ -275,7 +277,7 @@ def 检查原神data名是国服还是国际服():
 
 
 def 检测配置是否正常():  # 如果正常就返回True,不正常就返回False
-    路径 = 获取路径()
+    路径 = 配置.读取("原神路径")
     config = open(路径 + "\config.ini", "r").read()
     if """[General]
 channel=""" in config:
@@ -308,7 +310,6 @@ def 关闭原神主程序():
 
 
 def 官服启动():
-    关闭原神主程序()
     当前服 = str(获取当前服())
     print(当前服 + " ----- 官服")
     if 当前服 == "官服":
@@ -321,11 +322,10 @@ def 官服启动():
         b转官()
     当前服显示信息.set(获取当前服())
     刷新当前服显示框的字体颜色()
-    启动("官服")
+    启动()
 
 
 def b服启动():
-    关闭原神主程序()
     当前服 = str(获取当前服())
     print(当前服 + " ----- b服")
     if 当前服 == "官服":
@@ -339,11 +339,10 @@ def b服启动():
         官转b()
     当前服显示信息.set(获取当前服())
     刷新当前服显示框的字体颜色()
-    启动("b服")
+    启动()
 
 
 def 国际服启动():
-    关闭原神主程序()
     依赖包是否下载 = 判断依赖包是否下载()
     当前服 = str(获取当前服())
     print(当前服 + " ----- 国际服")
@@ -359,7 +358,7 @@ def 国际服启动():
             pass
         当前服显示信息.set(获取当前服())
         刷新当前服显示框的字体颜色()
-        启动("国际服")
+        启动()
     else:
         提示("系统提示", "依赖包没有下载，请前往q群下载")
 
@@ -391,8 +390,8 @@ def 手动选择原神路径():
     路径 = filedialogs.open_folder_dialog('选择"Genshin Impact Game"路径', 'gbk')
     print(路径)
     if "genshin impact game" in 路径[-19:].lower():
-        保存路径(路径)
-        当前路径.set(open("data/配置信息/原神路径", "r").read())
+        配置.修改("原神路径",路径)
+        当前路径.set(配置.读取("原神路径"))
         当前服显示信息.set(获取当前服())
         刷新当前服显示框的字体颜色()
         提示("可爱の惠惠の提示", "路径保存成功")
@@ -488,15 +487,11 @@ def 调整图片尺寸():
         resized_image = image.resize((width, height), Image.ANTIALIAS)
         resized_image.save(file_out)
 
-    y_屏幕 = tk.winfo_screenheight()
-    x_屏幕 = tk.winfo_screenwidth()
+    y_屏幕 = tk.winfo_screenheight()*0.8
+    x_屏幕 = tk.winfo_screenwidth()*0.8
     x_图片 = 获取背景图片().width()
     y_图片 = 获取背景图片().height()
-    print("""
-屏幕x={}
-屏幕y={}
-图片x={}
-图片y={}
+    print("""屏幕x={}\n屏幕y={}\n图片x={}\n图片y={}
     """.format(x_屏幕, y_屏幕, x_图片, y_图片))
     if x_图片 > x_屏幕:
         x_缩小比例 = x_屏幕 / x_图片
@@ -521,7 +516,10 @@ def 调整图片尺寸():
     更改图片尺寸("data/资源/背景.png", "data/资源/背景.png", int(x_图片 * 最终缩小比例), int(y_图片 * 最终缩小比例))
 
 
-def 生成背景(类型):
+
+
+
+def 生成背景(类型,背景缓存位置="data/资源/背景",背景位置="data/资源/背景.png"):
     if 类型 == "全部":
         url = "https://iw233.cn/api.php?sort=random"
     if 类型 == "银发":
@@ -531,15 +529,24 @@ def 生成背景(类型):
     if 类型 == "星空":
         url = "https://iw233.cn/api.php?sort=xing"
     if 类型 == "色图":
-        url = "http://8.142.28.115:13131/色图"
+        if 检查data里是否有文件("惠惠.dll"):
+            url = f"{服务器}:13131/色图"
+        else:
+            提示("提示","请联系惠惠购买\n才...才不是交不起服务器费了呢...哼~")
+    if 类型 == "超级涩图":
+        if 检查data里是否有文件("涩涩.dll"):
+            url = f"{服务器}:1145/超级涩图"
+        else:
+            提示("提示","请联系惠惠购买\n才...才不是交不起服务器费了呢...哼~")
+            return False
     print(url)
     data = requests.get(url).content
-    a = open("data/资源/背景.png", "wb")
-    print(data)
+    a = open(背景缓存位置, "wb")
     a.write(data)
     a.close()
-    Image.open("data/资源/背景.png").save("data/资源/背景.png")
+    Image.open(背景缓存位置).save(背景位置)
     调整图片尺寸()
+    print("背景大小="+str(获取文件大小(背景位置))+"MB")
 
 
 def 刷新背景():
@@ -554,49 +561,81 @@ def 随机背景(类型):
 
 
 def 更改图片保存的文件夹():
-    配置信息("背景图片的保存位置", filedialogs.open_folder_dialog(encoding="GBK"))
-    提示("系统提示", "背景图片保存路径已更改为:'{}'".format(配置信息("背景图片的保存位置")))
+    背景图片的保存位置=filedialogs.open_folder_dialog(encoding="GBK")
+    配置.修改("背景图片的保存位置", 背景图片的保存位置)
+    提示("系统提示", f"背景图片保存路径已更改为:'{背景图片的保存位置}'")
 
 
 def 保存背景():
     def 获取没有使用的图片名():
+        背景图片的保存位置=配置.读取("背景图片的保存位置")
         for i in range(99999):
             try:
-                open("{}/{}.png".format(获取桌面路径(), i))
-            except:
+                open("{}\\{}.png".format(背景图片的保存位置, i))
+            except Exception as err:
                 return i
 
-    if 配置信息("背景图片的保存位置") == "":
-        更改图片保存的文件夹()
+    def _保存背景():
+        print("保存背景   data/资源/背景.png  -->  {}\\{}.png".format(配置.读取("背景图片的保存位置"), 获取没有使用的图片名()))
+        shutil.copy("data/资源/背景.png", 配置.读取("背景图片的保存位置") + "\{}.png".format(获取没有使用的图片名()))
+        提示("系统提示", "背景已保存至" + 配置.读取("背景图片的保存位置"))
 
-    print("保存背景   data/资源/背景.png  -->  {}\{}.png".format(配置信息("背景图片的保存位置"), 获取没有使用的图片名()))
-    shutil.copy("data/资源/背景.png", 配置信息("背景图片的保存位置") + "\{}.png".format(获取没有使用的图片名()))
-    提示("系统提示", "背景已保存至" + 配置信息("背景图片的保存位置"))
+    if 配置.读取("背景图片的保存位置") == "":
+        更改图片保存的文件夹()
+        _保存背景()
+    _保存背景()
+
+
 
 
 def 更换背景():
-    from tkinter import filedialog
     file_path = filedialog.askopenfilenames(title='请选择一个文件', filetypes=[('图片', '.png'), ('图片', '.jpg')])[0]
     print(file_path)
-    Image.open(file_path).save("data/资源/自定义背景图片.png")
-    背景图片.config(file="data/资源/自定义背景图片.png")
+    Image.open(file_path).save("data/资源/背景.png")
+    背景图片.config(file="data/资源/背景.png")
     tk.geometry("{}x{}".format(背景图片.width(), 背景图片.height()))  # 图片多大，窗口就多大
     tk.update()
 
 
 def 帮助命令():
-    提示("可爱の惠惠の帮助", """如果程序转服识别，请联系惠惠远程""")
+    提示("可爱の惠惠の帮助", """如果程序转服失败，请联系惠惠远程""")
+
+
+def 打开官网():
+    webbrowser.open("http://103.103.200.190:11111/官网.html")
+
 
 
 def 关注惠惠bilibili():
     webbrowser.open("https://space.bilibili.com/400684381?spm_id_from=333.1007.0.0")
 
 
+def 打开每日材料表():
+    webbrowser.open("https://genshin.pub/daily")
+
+
+def 打开养成计算器():
+    webbrowser.open("https://genshin.pub/calc")
+
+
+def 打开圣遗物评分():
+    webbrowser.open("https://genshin.pub/relic")
+
+
+def 打开伤害计算器():
+    webbrowser.open("https://calc.genshin.pub/")
+
+
+
 def 检查更新(是否提示已是最新版本=False):
-    更新提示 = requests.get("http://8.142.28.115/新版本更新内容").text
-    最新版本 = requests.get("http://8.142.28.115/4版本").text
-    当前版本 = open("data/配置信息/当前转服器版本").read()
-    print(float(当前版本), float(最新版本))
+    try:
+        更新提示 = requests.get(f"{服务器}:11111/新版本更新内容").text
+        最新版本 = requests.get(f"{服务器}:11111/最新版本").text
+    except Exception as err:
+        print("获取更新信息失败:"+str(err))
+        return False
+    当前版本 = 配置.读取("当前转服器版本")
+    print(f"当前版本:{当前版本}  ---->   最新版本:{最新版本}")
     if float(当前版本) < float(最新版本):
         更新窗口 = tkinter.Tk()
         更新窗口.title("是否更新新版本")
@@ -605,13 +644,22 @@ def 检查更新(是否提示已是最新版本=False):
         更新窗口.resizable(False, False)
 
         def 下载新版本():
-            webbrowser.open("http://8.142.28.115/原神转服器安装包.exe")
-
+            webbrowser.open(f"{服务器}:11111/原神转服器安装包.exe")
         更新按钮 = tkinter.Button(更新窗口, text="更新", justify='left', command=下载新版本).pack()
         更新窗口.mainloop()
     else:
         if 是否提示已是最新版本:
             提示("系统提示", "目前已是最新版本，无需更新")
+
+def 记录登录次数():
+    try:
+        requests.get(f"{服务器}:11451/记录")  # 向服务器记录一次登录次数，服务器每天都会记录启动次数
+        print(f"向服务器发起记录成功  ------> {服务器}:11451/记录")
+    except Exception as err:
+        print(f"向服务器发起记录失败  ------> {err}")
+
+def 加q群():
+    webbrowser.open(requests.get(f"{服务器}:11111/q群链接").text)
 
 
 def 联系惠惠():
@@ -619,7 +667,15 @@ def 联系惠惠():
 
 
 def 贡献榜():
-    提示("贡献榜  感谢大家对惠惠的支持，希望惠惠可以帮到越来越多的人", requests.get("http://8.142.28.115/贡献榜").text)
+    提示("贡献榜  感谢大家对惠惠的支持，希望惠惠可以帮到越来越多的人", requests.get(f"{服务器}:11111/贡献榜").text)
+
+
+def 检查data里是否有文件(文件名,路径="data"):
+    for i in 获取目录下的文件(路径):
+        if 文件名 in i:
+            return True
+    else:
+        return False
 
 
 def 管理账号窗口():
@@ -692,6 +748,23 @@ def 管理账号窗口():
 
 
 def 惠惠自动化工具():
+    import os
+    import shutil
+    import subprocess
+    import threading
+    import time
+    import tkinter
+    import webbrowser
+    import winreg
+    from tkinter.ttk import Separator
+
+    from tkinter import filedialog
+    import filedialogs
+    import pyautogui
+    import requests
+    import win32com.client
+    from PIL import Image
+    from pynput.keyboard import Listener
     tk = tkinter.Tk()
     global 强化1坐标
     global 强化2坐标
@@ -704,7 +777,9 @@ def 惠惠自动化工具():
     global 位置记录
     global 强化间隔时间
     global 自动过剧情是否开启
+    global 自动过剧情热键
 
+    自动过剧情热键=配置.读取("自动过剧情热键")
     自动过剧情是否开启 = False
     强化间隔时间 = 0.1
     位置记录 = []
@@ -752,18 +827,19 @@ def 惠惠自动化工具():
             pyautogui.click(int(pyautogui.size()[0] * 0.9), (pyautogui.size()[1] * 0.75))
             pyautogui.click(int(pyautogui.size()[0] * 0.9), (pyautogui.size()[1] * 0.8))
             pyautogui.click(int(pyautogui.size()[0] * 0.9), (pyautogui.size()[1] * 0.85))
-            pyautogui.click(int(pyautogui.size()[0] * 0.9), (pyautogui.size()[1] * 0.))
+            pyautogui.click(int(pyautogui.size()[0] * 0.9), (pyautogui.size()[1] * 0.9))
             if 自动过剧情是否开启 == False:
                 break
 
     def _按键监听():
         def 判断是否启动函数(key):
+            key=str(key).replace("'","")
             global 回车次数
             global 输入记录
             global 位置记录
             global 自动过剧情是否开启
-            输入记录 = 输入记录 + str(key).replace("'", "")
-            if "enter" in str(key):
+            输入记录 = 输入记录 + key.replace("'", "")
+            if "enter" in key:
                 鼠标位置 = 获取鼠标位置()
                 if 回车次数 >= 4:
                     位置记录.remove(位置记录[0])
@@ -777,7 +853,8 @@ def 惠惠自动化工具():
                 except Exception as Erroe:
                     if Erroe == "list index out of range":
                         pass
-            if "Key.f10" in str(key):
+            print(自动过剧情热键 + key)
+            if 自动过剧情热键 == key:
                 if 自动过剧情是否开启 == False:
                     自动过剧情是否开启 = True
                     threading.Thread(group=None, args=(), kwargs={}, daemon=None, target=自动过剧情).start()
@@ -785,12 +862,11 @@ def 惠惠自动化工具():
                     自动过剧情是否开启 = False
                 print("自动过剧情是否开启=" + str(自动过剧情是否开启))
 
-            print(输入记录)
-            print(回车次数)
-            print(位置记录)
+            print(输入记录+" ",end=" ")
 
         with Listener(判断是否启动函数) as listener:
             listener.join()
+
 
     if __name__ == '__main__':
         """-----------------------init----------------------------"""
@@ -808,24 +884,39 @@ def 惠惠自动化工具():
         tk.attributes("-topmost", 1)
         """-------------------------label-------------------------"""
         tkinter.Label(tk, text="自动化工具配置，使用方法见主页帮助").place(x=0, y=0)
-        tkinter.Scale(tk, from_=40, to=1, resolution=1, length=150, sliderlength=20, label='次数', command=修改强化次数).place(
+        tkinter.Scale(tk, from_=40, to=1, resolution=1, length=150, sliderlength=20, label='次数',variable=强化次数, command=修改强化次数).place(
             x=320, y=40)
-        tkinter.Scale(tk, from_=0.3, to=0.1, resolution=0.01, length=150, sliderlength=20, label='间隔时间',
+        tkinter.Scale(tk, from_=0.3, to=0.1, resolution=0.01, length=150, sliderlength=20, label='间隔时间',variable=强化间隔时间,
                       command=修改强化间隔时间).place(x=10, y=40)
+        ttk.Label(tk,textvariable=强化次数).place(x=350,y=80)
+        ttk.Label(tk,textvariable=强化间隔时间).place(x=40,y=80)
         tkinter.ttk.Separator(tk, orient=tkinter.HORIZONTAL).place(x=20, y=200, width=380)
-        tkinter.Label(tk, text="自动过剧情开关：F10").place(x=0, y=250)
+        tkinter.Label(tk, text=f"自动过剧情开关：{配置.读取('自动过剧情热键')}").place(x=0, y=250)
+        tkinter.mainloop()
 
-        """------------------------menu---------------------------"""
-        任务栏 = tkinter.Menu(tk)
-        tk.config(menu=任务栏)
+
+
+def 自动钓鱼器():
+    命令一 = "cd {}".format(系统路径转换(os.getcwd() + "\data\自动钓鱼器"))
+    总命令 = "{}:&".format(os.getcwd()[:1]) + 命令一 + "&.\{}".format("GenshinFishing")
+    print(总命令)
+    # threading.Thread(group=None, args=([总命令]), kwargs={}, daemon=None, target=os.system).start()  # 创建线程，防止游戏启动时转服器卡死
+    threading.Thread(group=None, args=([总命令]),
+                     kwargs={"shell": True, "stdin": subprocess.PIPE, "stdout": subprocess.PIPE,
+                             "stderr": subprocess.PIPE}, daemon=None,
+                     target=subprocess.call).start()  # 创建线程，防止游戏启动时转服器卡死
+
 
 
 def 输出基本信息():
     print("-" * 20)
     print("桌面路径=" + 获取桌面路径())
-    print("原神路径=" + 配置信息("原神路径"))
-    print("背景图片的保存位置=" + 配置信息("背景图片的保存位置"))
-    print("默认启动方式=" + 配置信息("默认启动方式"))
+    print("原神路径=" + 配置.读取("原神路径"))
+    print("背景图片的保存位置=" + 配置.读取("背景图片的保存位置"))
+    print("普通涩图补丁="+str(检查data里是否有文件("惠惠.dll")))
+    print("超级涩图补丁="+str(检查data里是否有文件("涩涩.dll")))
+    print("破解帧率+反虚化补丁="+str(检查data里是否有文件("帧率破解器+反虚化")))
+    print("自动钓鱼补丁="+str(检查data里是否有文件("GenshinFishing.exe")))
     print("-" * 20)
 
 
@@ -835,42 +926,40 @@ def 菜单():
 
         def 任务栏_工具箱():
             工具箱 = tkinter.Menu(tk, tearoff=False)
-            工具箱.add_cascade(label="惠惠自动化工具", command=惠惠自动化工具)
-            工具箱.add_cascade(label="破解帧率启动", command=破解帧率启动)
+            工具箱.add_cascade(label="从群文件获取依赖", command=将依赖包放进data文件夹)
+            工具箱.add_separator()  # 添加一条线，好看
+            工具箱.add_cascade(label="惠惠自动过剧情+自动强化圣遗物", command=惠惠自动化工具)
+            if 检查data里是否有文件("GenshinFishing.exe"):
+                工具箱.add_cascade(label="自动钓鱼器(bilibili：下限nico)", command=自动钓鱼器)
+            工具箱.add_separator()  # 添加一条线，好看
+            工具箱.add_cascade(label="每日材料表", command=打开每日材料表)
+            工具箱.add_cascade(label="养成计算器", command=打开养成计算器)
+            工具箱.add_cascade(label="伤害计算器", command=打开伤害计算器)
+            工具箱.add_cascade(label="圣遗物评分", command=打开圣遗物评分)
             任务栏.add_cascade(label="工具箱", menu=工具箱)
-
-        def 任务栏_帮助():
-            帮助 = tkinter.Menu(tk, tearoff=False)
-            帮助.add_cascade(label="惠惠原神转服器", command=lambda: 提示(帮助, open("data/说明文档/原神转服器.md", encoding="utf-8").read()))
-            帮助.add_cascade(label="惠惠自动化工具",
-                           command=lambda: 提示(帮助, open("data/说明文档/惠惠自动化工具.md", encoding="utf-8").read()))
-            帮助.add_cascade(label="破解帧率启动器", command=lambda: 提示(帮助, open("data/说明文档/帧率破解器.md", encoding="utf-8").read()))
-            帮助.add_separator()  # 添加一条线，好看
-            帮助.add_cascade(label="联系惠惠", command=联系惠惠)
-            任务栏.add_cascade(label="帮助", menu=帮助)
 
         def 任务栏_获取兑换码():
             if 获取兑换码(False) == "获取成功":
-                任务栏.add_cascade(label="获取兑换码", command=lambda: 获取兑换码(True))
-
-        def 任务栏_功能():
-            功能 = tkinter.Menu(tk, tearoff=False)
-            功能.add_cascade(label="检查更新", command=lambda: 检查更新(True))
-            功能.add_cascade(label="从群文件获取依赖", command=将依赖包放进data文件夹)
-            任务栏.add_cascade(label="功能", menu=功能)
+                threading.Thread(group=None, args=(), kwargs={"label":"获取兑换码","command":lambda :获取兑换码(True)}, daemon=None, target=任务栏.add_cascade)
 
         def 任务栏_支持惠惠():
             支持惠惠 = tkinter.Menu(tk, tearoff=False)
-            支持惠惠.add_cascade(label="给惠惠打赏", command=给惠惠打赏按钮)
+            支持惠惠.add_cascade(label="打开官网", command=打开官网)
+            支持惠惠.add_cascade(label="给惠惠钱(才...才不是因为交不起服务器费呢...哼~❤)", command=给惠惠打赏按钮)
             支持惠惠.add_cascade(label="关注惠惠biliblil", command=关注惠惠bilibili)
             任务栏.add_cascade(label="支持惠惠", menu=支持惠惠)
 
+        def 任务栏_版本():
+            版本 = tkinter.Menu(tk, tearoff=False)
+            版本.add_cascade(label="检查更新", command=lambda: 检查更新(True))
+            任务栏.add_cascade(label="版本",menu=版本)
+
         任务栏_支持惠惠()
         任务栏.add_cascade(label="贡献榜", command=贡献榜)
-        任务栏_功能()
         任务栏_工具箱()
-        任务栏_帮助()
-        任务栏_获取兑换码()
+        任务栏_版本()
+        任务栏.add_cascade(label="致使用者", command=lambda :提示("惠惠留","这几天发生了很多事\nb站下架了我的所有视频。他们会以各种理由锁我的视频\n我认为，这是一种被迫害妄想症\n那些愚蠢的人总是觉得我会碰他们的蛋糕\n这是愚不可及的\n我只是一个高中生，希望用我的知识帮助更多的人"))
+        threading.Thread(group=None, args=(), kwargs={}, daemon=None, target=任务栏_获取兑换码).start()
         return 任务栏
 
     def 启动菜单_main():
@@ -878,9 +967,6 @@ def 菜单():
         启动菜单.add_cascade(label="官服启动", command=官服启动)
         启动菜单.add_cascade(label="b服启动", command=b服启动)
         启动菜单.add_cascade(label="国际服启动", command=国际服启动)
-        启动菜单.add_separator()  # 添加一条线，好看
-        启动菜单.add_checkbutton(label="是否破解帧率启动", variable=是否需要破解帧率启动,
-                             command=lambda: 配置信息("data/配置信息/默认启动方式", 是否需要破解帧率启动.get()))
         return 启动菜单
 
     def 选择路径菜单_main():
@@ -913,16 +999,15 @@ def 菜单():
 def 背景的右键菜单(鼠标的点击位置):
     界面 = tkinter.Menu(tk, tearoff=False)
     界面.add_cascade(label="自定义背景", command=更换背景)
+    界面.add_cascade(label="保存背景图片", command=保存背景)
+    界面.add_cascade(label="更改背景保存位置", command=更改图片保存的文件夹)
     界面.add_separator()  # 添加一条线，好看
     界面.add_cascade(label="随机背景", command=lambda: 随机背景("全部"))
     界面.add_cascade(label="随机背景(银发)", command=lambda: 随机背景("银发"))
     界面.add_cascade(label="随机背景(兽耳)", command=lambda: 随机背景("兽耳"))
     界面.add_cascade(label="随机背景(星空)", command=lambda: 随机背景("星空"))
     界面.add_cascade(label="随机背景(色图)", command=lambda: 随机背景("色图"))
-    界面.add_separator()  # 添加一条线，好看
-    界面.add_cascade(label="保存背景图片", command=保存背景)
-    界面.add_separator()  # 添加一条线，好看
-    界面.add_cascade(label="更改背景保存位置", command=更改图片保存的文件夹)
+    界面.add_cascade(label="随机背景(超级涩图)", command=lambda: 随机背景("超级涩图"))
     界面.post(鼠标的点击位置.x_root, 鼠标的点击位置.y_root)
 
 
@@ -935,41 +1020,45 @@ if __name__ == '__main__':
     当前服显示信息.set(获取当前服(True))
     # 刷新当前服显示框的字体颜色()    #当前服为初始化，所以放在初始化后，启动窗口前的，自己找
     是否需要破解帧率启动 = tkinter.StringVar()
-    是否需要破解帧率启动.set(配置信息("默认启动方式"))  # 0是未选中，1是选中
+    是否需要破解帧率启动.set(配置.读取("默认破解帧率"))  # 0是未选中，1是选中
     当前路径 = tkinter.Variable()
-    当前路径.set(获取路径())
+    当前路径.set(配置.读取("原神路径"))
     当前要启动的账号 = tkinter.Variable()
-    当前要启动的账号.set("当前账号:默认")
+    当前要启动的账号.set("账号:默认")
     """---------------------------------  背景设置  ---------------------------------------------"""
     背景图片 = 获取背景图片()
     背景 = tkinter.Label(tk, image=背景图片, cursor="hand2")
-    背景.bind("<Button-3>", 背景的右键菜单)
     背景.bind("<Button-1>", 背景的右键菜单)
     背景.pack()
     """---------------------------------  控件设置  ---------------------------------------------"""
-    当前账号框 = tkinter.Label(tk, font=字体大小, background="#FFFF6F", textvariable=当前要启动的账号, anchor="w")
-    当前路径显示 = tkinter.Label(tk, font=字体大小, background="#FFFF6F", textvariable=当前路径, anchor="w")
-    当前服显示框 = tkinter.Label(tk, font=字体大小, background="#FFFF6F", textvariable=当前服显示信息, anchor="w")
-    启动按钮 = tkinter.Menubutton(tk, text='启动', font=字体大小)
-    切换账号按钮 = tkinter.Menubutton(tk, text='账号', font=字体大小)
-    选择路径按钮 = tkinter.Menubutton(tk, text="选择路径", font=字体大小, background="#FF8040")
-    """---------------------------------  布局设置  ---------------------------------------------"""
-    高度 = 0.03
-    当前账号框.place(relx=0, rely=0, relwidth=0.1, relheight=高度)
-    当前服显示框.place(relx=0.1, rely=0, relwidth=0.1, relheight=高度)
-    当前路径显示.place(relx=0.2, rely=0, relwidth=0.8, relheight=高度)
-    选择路径按钮.place(relx=0.8, rely=0, relwidth=0.2, relheight=高度)
-    """--------------------------------     主要控件     -------------------------------------------"""
-    启动按钮.place(relx=0.3, rely=0.8, relwidth=0.05, relheight=0.07)
-    切换账号按钮.place(relx=0.5, rely=0.8, relwidth=0.05, relheight=0.07)
+    当前账号框 = ttk.Label(tk, font=字体大小, background="#FFFF6F",bootstyle=SUCCESS, textvariable=当前要启动的账号, anchor="w")
+    当前路径显示 = ttk.Label(tk, font=字体大小, background="#FFFF6F", textvariable=当前路径, anchor="w",bootstyle=SUCCESS)
+    当前服显示框 = ttk.Label(tk, font=字体大小, background="#FFFF6F", textvariable=当前服显示信息, anchor="w",bootstyle=SUCCESS)
+    启动按钮 = ttk.Menubutton(tk, text='启动',bootstyle="info-outline")
+    破解帧率启动勾选框=ttk.Checkbutton(启动按钮,text="破解帧率\n去除虚化", variable=是否需要破解帧率启动,bootstyle="success-round-toggle", command=lambda: 配置.修改("默认破解帧率", 是否需要破解帧率启动.get()))
+    切换账号按钮 = ttk.Menubutton(tk, text='账号',bootstyle="info-outline")
+    选择路径按钮 = ttk.Menubutton(tk, text="选择路径",bootstyle=SUCCESS)
+    """---------------------------------  周围布局设置  ---------------------------------------------"""
+    高度 = 30
+    当前账号框.place(relx=0, rely=0, relwidth=0.1, height=高度)
+    当前服显示框.place(relx=0.1, rely=0, relwidth=0.1, height=高度)
+    当前路径显示.place(relx=0.2, rely=0, relwidth=0.8, height=高度)
+    选择路径按钮.place(relx=0.8, rely=0, relwidth=0.2, height=高度)
+    """---------------------------------  内部布局设置  ---------------------------------------------"""
+    if 检查data里是否有文件("帧率破解器+反虚化"):
+        破解帧率启动勾选框.place(relx=0.45, rely=0.05, relwidth=0.45, relheight=0.9)
+        配置.修改("默认破解帧率","0")
+    启动按钮.place(relx=0.25, rely=0.8, relwidth=0.15, relheight=0.05)
+    切换账号按钮.place(relx=0.55, rely=0.8, relwidth=0.15, relheight=0.05)
     """----------------------------------  菜单   ---------------------------------------------"""
     菜单()  # 将任务栏菜单放在一个函数
     """---------------------------------  窗口配置  ----------------------------------------"""
     tk.title("原神转服器  bilibili:是惠惠不是惠惠")
     tk.geometry("{}x{}".format(背景图片.width(), 背景图片.height()))  # 图片多大，窗口就多大
+    #tk.wm_attributes('-transparentcolor', "#CCFFFF")
     # tk.resizable(False, False)
     tk.iconbitmap("data/资源/图标.ico")
-    路径 = 获取路径()
+    路径 = 配置.读取("原神路径")
     刷新当前服显示框的字体颜色()
     输出基本信息()
     """---------------------------------  窗口启动  ---------------------------------------------"""
